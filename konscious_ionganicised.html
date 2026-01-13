@@ -664,6 +664,10 @@
             <span id="detailDate">--</span>
             <div class="detail-tags" id="detailTags"></div>
         </div>
+        <div class="detail-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+            <button onclick="editNode()" style="flex:1; padding: 8px; background: rgba(0,240,255,0.1); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); border-radius: 5px; cursor: pointer;">✏️ EDIT</button>
+            <button onclick="deleteNode()" style="flex:1; padding: 8px; background: rgba(255,0,0,0.1); border: 1px solid #ff4444; color: #ff4444; border-radius: 5px; cursor: pointer;">🗑️ DELETE</button>
+        </div>
     </div>
     
     <!-- EMPTY STATE -->
@@ -1083,7 +1087,10 @@
         // DETAIL PANEL
         // ============================================
         
+       let selectedNode = null;
+        
         function showDetail(node) {
+            selectedNode = node;
             const panel = document.getElementById('detailPanel');
             
             document.getElementById('detailType').textContent = (node.type || 'thought').toUpperCase();
@@ -1119,6 +1126,71 @@
         
         function closeDetail() {
             document.getElementById('detailPanel').classList.remove('active');
+            selectedNode = null;
+        }
+        
+        async function deleteNode() {
+            if (!selectedNode || !supabaseClient) return;
+            
+            if (!confirm(`Delete this node?\n\n"${selectedNode.content.substring(0, 50)}..."`)) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('nodes')
+                    .delete()
+                    .eq('id', selectedNode.id);
+                
+                if (error) throw error;
+                
+                // Remove from local array and re-render
+                nodes = nodes.filter(n => n.id !== selectedNode.id);
+                edges = edges.filter(e => e.source.id !== selectedNode.id && e.target.id !== selectedNode.id);
+                document.getElementById('nodeCount').textContent = nodes.length;
+                document.getElementById('edgeCount').textContent = edges.length;
+                
+                closeDetail();
+                renderGraph();
+                
+                console.log('>> Node deleted');
+            } catch (error) {
+                console.error('>> Delete failed:', error);
+                alert('Delete failed: ' + error.message);
+            }
+        }
+        
+        function editNode() {
+            if (!selectedNode) return;
+            
+            const newContent = prompt('Edit node content:', selectedNode.content);
+            if (newContent === null || newContent === selectedNode.content) return;
+            
+            updateNodeContent(selectedNode.id, newContent);
+        }
+        
+        async function updateNodeContent(nodeId, newContent) {
+            if (!supabaseClient) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('nodes')
+                    .update({ content: newContent })
+                    .eq('id', nodeId);
+                
+                if (error) throw error;
+                
+                // Update local data
+                const node = nodes.find(n => n.id === nodeId);
+                if (node) {
+                    node.content = newContent;
+                    document.getElementById('detailContent').textContent = newContent;
+                    renderGraph();
+                }
+                
+                console.log('>> Node updated');
+            } catch (error) {
+                console.error('>> Update failed:', error);
+                alert('Update failed: ' + error.message);
+            }
         }
         
         // Close detail on escape
