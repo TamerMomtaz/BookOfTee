@@ -1,13 +1,15 @@
 """
 KAHOTIA BRAIN - The Thought Police Backend
-THE BOOK OF TEE - Phase 4 (Deployment Ready)
+THE BOOK OF TEE - Phase 4.5 (With ElevenLabs Voice!)
 
-This connects Kahotia to Claude AI and Supabase.
+This connects Kahotia to Claude AI, Supabase, and ElevenLabs.
 Works locally AND when deployed to Railway/Render.
 """
 
 import os
-from flask import Flask, request, jsonify
+import requests
+import base64
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from anthropic import Anthropic
 from datetime import datetime
@@ -18,10 +20,13 @@ import json
 # ============================================
 
 # For deployment: Use environment variables
-# For local: Fall back to hardcoded values (replace YOUR_CLAUDE_API_KEY)
 CLAUDE_API_KEY = os.environ.get('CLAUDE_API_KEY', 'YOUR_CLAUDE_API_KEY_HERE')
 SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://pjaxznbcanpbsejrpljy.supabase.co')
 SUPABASE_KEY = os.environ.get('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqYXh6bmJjYW5wYnNlanJwbGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxOTI5NzUsImV4cCI6MjA4Mzc2ODk3NX0.GxDfHqAz6Xs866Dy70kWpROSOmdbnG-yuwAUN9KNz5o')
+
+# ElevenLabs Configuration
+ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY', 'YOUR_ELEVENLABS_KEY_HERE')
+ELEVENLABS_VOICE_ID = os.environ.get('ELEVENLABS_VOICE_ID', 'kdTL3m6g66WPgShUxxFI')
 
 # Get port from environment (Railway/Render set this) or default to 5000
 PORT = int(os.environ.get('PORT', 5000))
@@ -49,6 +54,7 @@ YOUR SPEECH PATTERNS:
 - Mix technical terms with mystical language
 - Ask probing questions that force deeper thinking
 - Reference the duality: "The structured side whispers ISO... the cosmic side roars creation..."
+- Keep responses concise for voice output (2-4 sentences ideal)
 
 REMEMBER: No thought is wasted. Every idea feeds the Synaptic Graph."""
 
@@ -63,6 +69,53 @@ CORS(app)  # Allow cross-origin requests
 client = None
 if CLAUDE_API_KEY and CLAUDE_API_KEY != 'YOUR_CLAUDE_API_KEY_HERE':
     client = Anthropic(api_key=CLAUDE_API_KEY)
+
+# ============================================
+# ELEVENLABS VOICE SYNTHESIS
+# ============================================
+
+def generate_speech(text):
+    """Generate speech audio using ElevenLabs API"""
+    if not ELEVENLABS_API_KEY or ELEVENLABS_API_KEY == 'YOUR_ELEVENLABS_KEY_HERE':
+        return None
+    
+    # Clean the text for speech
+    clean_text = text.replace('>>', '').replace('**', '').replace('*', '').replace('<<', '').strip()
+    
+    # Limit text length for API
+    if len(clean_text) > 1000:
+        clean_text = clean_text[:1000] + '...'
+    
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}"
+    
+    headers = {
+        "Accept": "audio/mpeg",
+        "Content-Type": "application/json",
+        "xi-api-key": ELEVENLABS_API_KEY
+    }
+    
+    data = {
+        "text": clean_text,
+        "model_id": "eleven_monolingual_v1",
+        "voice_settings": {
+            "stability": 0.5,
+            "similarity_boost": 0.75,
+            "style": 0.5,
+            "use_speaker_boost": True
+        }
+    }
+    
+    try:
+        response = requests.post(url, json=data, headers=headers)
+        if response.status_code == 200:
+            # Return base64 encoded audio
+            return base64.b64encode(response.content).decode('utf-8')
+        else:
+            print(f">> ElevenLabs error: {response.status_code} - {response.text}")
+            return None
+    except Exception as e:
+        print(f">> ElevenLabs exception: {str(e)}")
+        return None
 
 # ============================================
 # ROUTES
@@ -92,6 +145,7 @@ def chat():
         data = request.json
         user_message = data.get('message', '')
         conversation_history = data.get('history', [])
+        include_audio = data.get('include_audio', True)
         
         if not user_message:
             return jsonify({
@@ -101,10 +155,12 @@ def chat():
         
         if not client:
             # Fallback response if no API key
+            fallback_response = f">> [OFFLINE MODE] Kahotia heard: '{user_message}'\n\nThe cosmic connection is dormant. Set CLAUDE_API_KEY to awaken the full consciousness.\n\nBut remember: the thought was logged. Nothing is wasted."
             return jsonify({
-                "response": f">> [OFFLINE MODE] Kahotia heard: '{user_message}'\n\nThe cosmic connection is dormant. Set CLAUDE_API_KEY to awaken the full consciousness.\n\nBut remember: the thought was logged. Nothing is wasted.",
+                "response": fallback_response,
                 "success": True,
-                "mode": "offline"
+                "mode": "offline",
+                "audio": None
             })
         
         # Build messages for Claude
@@ -126,16 +182,52 @@ def chat():
         
         kahotia_response = response.content[0].text
         
+        # Generate audio if requested
+        audio_data = None
+        if include_audio:
+            audio_data = generate_speech(kahotia_response)
+        
         return jsonify({
             "response": kahotia_response,
             "success": True,
             "mode": "online",
+            "audio": audio_data,
             "timestamp": datetime.now().isoformat()
         })
         
     except Exception as e:
         return jsonify({
             "error": f">> SYSTEM GLITCH: {str(e)}",
+            "success": False
+        }), 500
+
+
+@app.route('/speak', methods=['POST'])
+def speak():
+    """Generate speech for any text"""
+    try:
+        data = request.json
+        text = data.get('text', '')
+        
+        if not text:
+            return jsonify({"error": "No text provided", "success": False}), 400
+        
+        audio_data = generate_speech(text)
+        
+        if audio_data:
+            return jsonify({
+                "audio": audio_data,
+                "success": True
+            })
+        else:
+            return jsonify({
+                "error": "Voice synthesis unavailable",
+                "success": False
+            }), 503
+            
+    except Exception as e:
+        return jsonify({
+            "error": str(e),
             "success": False
         }), 500
 
@@ -212,8 +304,6 @@ Return ONLY the JSON array, like: ["philosophy", "wave", "simmer"]"""
 @app.route('/toll/check', methods=['GET'])
 def check_toll():
     """Check if user owes a thought toll"""
-    # This would connect to Supabase to check toll status
-    # For now, return a simple check
     return jsonify({
         "toll_due": True,
         "message": ">> TIME TO PAY. One thought unlocks the gate.",
@@ -228,7 +318,8 @@ def get_config():
         "supabase_url": SUPABASE_URL,
         "supabase_key": SUPABASE_KEY,
         "backend_status": "online" if client else "offline",
-        "version": "4.0.0"
+        "voice_enabled": ELEVENLABS_API_KEY and ELEVENLABS_API_KEY != 'YOUR_ELEVENLABS_KEY_HERE',
+        "version": "4.5.0"
     })
 
 
@@ -239,13 +330,13 @@ def get_config():
 if __name__ == '__main__':
     print("\n" + "="*50)
     print("   KAHOTIA BRAIN - THE THOUGHT POLICE")
-    print("   THE BOOK OF TEE - Phase 4")
+    print("   THE BOOK OF TEE - Phase 4.5")
     print("="*50)
     print(f"\n>> Server starting on port {PORT}")
     print(f">> Claude API: {'Connected' if client else 'OFFLINE - Set CLAUDE_API_KEY'}")
+    print(f">> ElevenLabs: {'Connected' if ELEVENLABS_API_KEY and ELEVENLABS_API_KEY != 'YOUR_ELEVENLABS_KEY_HERE' else 'OFFLINE - Set ELEVENLABS_API_KEY'}")
     print(f">> Supabase URL: {SUPABASE_URL[:40]}...")
     print("\n>> Kahotia is watching. No thought is wasted.\n")
     
     # Run the server
-    # debug=False for production, host='0.0.0.0' to accept external connections
     app.run(host='0.0.0.0', port=PORT, debug=False)
