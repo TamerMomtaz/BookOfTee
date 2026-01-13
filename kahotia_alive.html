@@ -722,7 +722,7 @@
                     .from('nodes')
                     .insert({
                         content: content,
-                        type: tags[0] || 'thought',
+                        node_type: tags[0] || 'thought',
                         tags: tags,
                         created_at: new Date().toISOString()
                     })
