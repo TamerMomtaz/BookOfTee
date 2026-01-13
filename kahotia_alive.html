@@ -749,7 +749,7 @@
                 if (error) throw error;
                 
                 console.log('>> Thought saved successfully:', data.id);
-                showToast('💾 Thought saved!', 'success');
+                showToast(`💾 Saved: ${data.id.substring(0,8)}...`, 'success');
                 thoughtCount++;
                 document.getElementById('thoughtCount').textContent = thoughtCount;
                 
