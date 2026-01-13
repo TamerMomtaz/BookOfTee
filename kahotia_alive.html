@@ -85,6 +85,10 @@
             .main-container {
                 grid-template-columns: 1fr;
             }
+            
+            .kahotia-container {
+                order: -1;
+            }
         }
         
         .panel {
@@ -525,7 +529,7 @@
         <!-- CENTER: KAHOTIA -->
         <div class="panel kahotia-container" id="kahotiaPanel">
             <div class="kahotia-avatar" id="kahotiaAvatar">
-                <img src="kahotia.jpg" alt="Kahotia" onerror="this.src='https://placehold.co/200x200/0a0a0f/00f0ff?text=KAHOTIA'">
+                <img src="kahotia.jpg" alt="Kahotia" onerror="this.src='https://raw.githubusercontent.com/TamerMomtaz/BookOfTee/main/kahotia.jpg'">
             </div>
             <div class="kahotia-status">
                 <span class="status-dot"></span>
@@ -559,13 +563,10 @@
     
     <script>
         // ============================================
-        // CONFIGURATION
+        // CONFIGURATION - LIVE RAILWAY BACKEND
         // ============================================
         
-        // Backend URL - change this when deploying
-        const BACKEND_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:5000' 
-            : window.location.origin;
+        const BACKEND_URL = 'https://web-production-f5f1e.up.railway.app';
         
         // Supabase client - initialized later
         let supabaseClient = null;
@@ -618,11 +619,6 @@
                 document.getElementById('connectionStatus').textContent = 'OFFLINE';
                 document.getElementById('connectionStatus').className = 'metric-value critical';
             }
-            
-            // Check if toll is due (random chance for demo - disabled for now)
-            // if (Math.random() < 0.3 && !tollPaid) {
-            //     setTimeout(showTollOverlay, 3000);
-            // }
             
             console.log('>> Initialization complete');
         }
@@ -791,9 +787,9 @@
                 tagEl.className = 'tag';
                 
                 // Color based on type
-                if (['reactor', 'metric', 'sop'].indexOf(tag) !== -1) {
+                if (['reactor', 'metric', 'sop', 'engineering'].indexOf(tag) !== -1) {
                     tagEl.classList.add('reactor');
-                } else if (['wave', 'lyric', 'sketch', 'concept'].indexOf(tag) !== -1) {
+                } else if (['wave', 'lyrics', 'sketch', 'concept', 'art', 'philosophy'].indexOf(tag) !== -1) {
                     tagEl.classList.add('wave');
                 }
                 
