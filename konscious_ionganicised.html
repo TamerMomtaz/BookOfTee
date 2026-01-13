@@ -910,40 +910,56 @@
         function generateEdgesFromTags(nodes) {
             const generatedEdges = [];
             const tagMap = {};
+            const typeMap = {};
             
-            // Build tag -> node mapping
+            // Build tag -> node mapping AND type -> node mapping
             nodes.forEach(node => {
+                // Group by tags
                 if (node.tags && node.tags.length > 0) {
                     node.tags.forEach(tag => {
-                        if (!tagMap[tag]) tagMap[tag] = [];
-                        tagMap[tag].push(node.id);
+                        const normalizedTag = tag.toLowerCase();
+                        if (!tagMap[normalizedTag]) tagMap[normalizedTag] = [];
+                        tagMap[normalizedTag].push(node.id);
                     });
                 }
+                
+                // Group by node_type (for clustering similar types)
+                const nodeType = (node.type || 'thought').toLowerCase();
+                if (!typeMap[nodeType]) typeMap[nodeType] = [];
+                typeMap[nodeType].push(node.id);
             });
             
-            // Create edges between nodes sharing tags
+            // Helper to add edge if not exists
+            function addEdge(id1, id2, weight) {
+                const exists = generatedEdges.some(e => 
+                    (e.source === id1 && e.target === id2) ||
+                    (e.source === id2 && e.target === id1)
+                );
+                if (!exists && id1 !== id2) {
+                    generatedEdges.push({ source: id1, target: id2, weight: weight });
+                }
+            }
+            
+            // Create edges between nodes sharing tags (strong connection)
             Object.values(tagMap).forEach(nodeIds => {
                 for (let i = 0; i < nodeIds.length; i++) {
                     for (let j = i + 1; j < nodeIds.length; j++) {
-                        // Avoid duplicate edges
-                        const exists = generatedEdges.some(e => 
-                            (e.source === nodeIds[i] && e.target === nodeIds[j]) ||
-                            (e.source === nodeIds[j] && e.target === nodeIds[i])
-                        );
-                        if (!exists) {
-                            generatedEdges.push({
-                                source: nodeIds[i],
-                                target: nodeIds[j],
-                                weight: 1
-                            });
-                        }
+                        addEdge(nodeIds[i], nodeIds[j], 2);
+                    }
+                }
+            });
+            
+            // Create edges between nodes of same TYPE (weaker connection for clustering)
+            Object.values(typeMap).forEach(nodeIds => {
+                for (let i = 0; i < nodeIds.length; i++) {
+                    for (let j = i + 1; j < nodeIds.length; j++) {
+                        addEdge(nodeIds[i], nodeIds[j], 0.5);
                     }
                 }
             });
             
             return generatedEdges;
-        }
-        
+        }        
         function useDemoData() {
             // Demo data for testing
             nodes = [
