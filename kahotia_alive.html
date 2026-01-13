@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE BOOK OF TEE - Kahotia Lives</title>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* ============================================
+           CSS VARIABLES & RESET
+           ============================================ */
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --accent-cyan: #00f0ff;
+            --accent-magenta: #ff00ff;
+            --accent-gold: #ffd700;
+            --text-primary: #e0e0e0;
+            --text-dim: #666;
+            --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.5);
+            --glow-magenta: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* ============================================
+           HEADER
+           ============================================ */
+        .header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--accent-cyan);
+            background: linear-gradient(180deg, #0f0f15 0%, var(--bg-dark) 100%);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: var(--glow-cyan);
+            animation: titlePulse 3s ease-in-out infinite;
+        }
+        
+        .header .subtitle {
+            color: var(--text-dim);
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+        
+        @keyframes titlePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        /* ============================================
+           MAIN LAYOUT
+           ============================================ */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 300px 1fr;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 1000px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid #2a2a3a;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .panel-title {
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a2a3a;
+        }
+        
+        /* ============================================
+           KAHOTIA - THE MASCOT (Center)
+           ============================================ */
+        .kahotia-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .kahotia-avatar {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            position: relative;
+            animation: float 4s ease-in-out infinite;
+            cursor: pointer;
+        }
+        
+        .kahotia-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--accent-cyan);
+            box-shadow: var(--glow-cyan), var(--glow-magenta);
+        }
+        
+        .kahotia-avatar::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-magenta);
+            animation: ring-pulse 2s ease-out infinite;
+        }
+        
+        .kahotia-avatar::after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            border-radius: 50%;
+            border: 1px solid var(--accent-cyan);
+            animation: ring-pulse 2s ease-out infinite 0.5s;
+            opacity: 0.5;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        @keyframes ring-pulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+        
+        .kahotia-status {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--accent-gold);
+        }
+        
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            margin-right: 8px;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        /* ============================================
+           THE REACTOR (Left Panel)
+           ============================================ */
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #1a1a2a;
+        }
+        
+        .metric-label {
+            color: var(--text-dim);
+        }
+        
+        .metric-value {
+            color: var(--accent-cyan);
+            font-weight: bold;
+        }
+        
+        .metric-value.warning {
+            color: var(--accent-gold);
+        }
+        
+        .metric-value.critical {
+            color: #ff4444;
+        }
+        
+        /* ============================================
+           THE GALLERY (Right Panel)
+           ============================================ */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .gallery-item {
+            aspect-ratio: 1;
+            background: #1a1a2a;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .gallery-item:hover {
+            border: 1px solid var(--accent-magenta);
+            box-shadow: var(--glow-magenta);
+        }
+        
+        /* ============================================
+           CHAT INTERFACE (Bottom)
+           ============================================ */
+        .chat-section {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+        }
+        
+        .chat-container {
+            height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #08080c;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .chat-message {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .chat-message.user {
+            color: var(--accent-cyan);
+        }
+        
+        .chat-message.user::before {
+            content: '>> YOU: ';
+            color: var(--text-dim);
+        }
+        
+        .chat-message.kahotia {
+            color: var(--accent-magenta);
+        }
+        
+        .chat-message.kahotia::before {
+            content: '>> KAHOTIA: ';
+            color: var(--text-dim);
+        }
+        
+        .chat-message.system {
+            color: var(--accent-gold);
+            font-style: italic;
+        }
+        
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            background: #1a1a2a;
+            border: 1px solid #2a2a3a;
+            border-radius: 5px;
+            padding: 12px 15px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1rem;
+        }
+        
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+        
+        .chat-input::placeholder {
+            color: var(--text-dim);
+        }
+        
+        .send-btn {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            border: none;
+            border-radius: 5px;
+            padding: 12px 25px;
+            color: #000;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: var(--glow-cyan), var(--glow-magenta);
+        }
+        
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* ============================================
+           THOUGHT TOLL OVERLAY
+           ============================================ */
+        .toll-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .toll-overlay.active {
+            display: flex;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .toll-content {
+            text-align: center;
+            max-width: 500px;
+            padding: 40px;
+        }
+        
+        .toll-title {
+            font-size: 2rem;
+            color: var(--accent-magenta);
+            margin-bottom: 20px;
+            animation: glitch 0.5s infinite;
+        }
+        
+        @keyframes glitch {
+            0%, 100% { text-shadow: 2px 0 var(--accent-cyan), -2px 0 var(--accent-magenta); }
+            50% { text-shadow: -2px 0 var(--accent-cyan), 2px 0 var(--accent-magenta); }
+        }
+        
+        .toll-message {
+            color: var(--text-primary);
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .toll-input {
+            width: 100%;
+            background: #1a1a2a;
+            border: 2px solid var(--accent-magenta);
+            border-radius: 5px;
+            padding: 15px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        
+        .toll-input:focus {
+            outline: none;
+            box-shadow: var(--glow-magenta);
+        }
+        
+        .toll-btn {
+            background: var(--accent-magenta);
+            border: none;
+            border-radius: 5px;
+            padding: 15px 40px;
+            color: #000;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .toll-btn:hover {
+            transform: scale(1.05);
+            box-shadow: var(--glow-magenta);
+        }
+        
+        /* ============================================
+           TAGS DISPLAY
+           ============================================ */
+        .tags-container {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .tag {
+            background: #1a1a2a;
+            border: 1px solid var(--accent-cyan);
+            border-radius: 15px;
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+        }
+        
+        .tag.reactor {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+        
+        .tag.wave {
+            border-color: var(--accent-magenta);
+            color: var(--accent-magenta);
+        }
+        
+        /* ============================================
+           LOADING SPINNER
+           ============================================ */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--text-dim);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- THOUGHT TOLL OVERLAY -->
+    <div class="toll-overlay" id="tollOverlay">
+        <div class="toll-content">
+            <div class="toll-title">⚡ THOUGHT TOLL ⚡</div>
+            <div class="toll-message">
+                >> SYSTEM LOCKOUT INITIATED<br><br>
+                Kahotia demands payment.<br>
+                One idea. One thought. One spark.<br><br>
+                <em>"No thought is wasted."</em>
+            </div>
+            <input type="text" class="toll-input" id="tollInput" placeholder="Pay your toll... type your thought">
+            <br>
+            <button class="toll-btn" id="tollBtn">UNLOCK SYSTEM</button>
+        </div>
+    </div>
+    
+    <!-- HEADER -->
+    <header class="header">
+        <h1>THE BOOK OF TEE</h1>
+        <p class="subtitle">>> Synaptic Command Center // Kahotia is Watching</p>
+    </header>
+    
+    <!-- MAIN CONTENT -->
+    <div class="main-container">
+        <!-- LEFT: THE REACTOR -->
+        <div class="panel">
+            <div class="panel-title">⚛️ THE REACTOR</div>
+            <div class="metric-item">
+                <span class="metric-label">System Status</span>
+                <span class="metric-value" id="systemStatus">ONLINE</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">Thoughts Logged</span>
+                <span class="metric-value" id="thoughtCount">0</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">Last Toll Paid</span>
+                <span class="metric-value" id="lastToll">NEVER</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">Creative Index</span>
+                <span class="metric-value warning" id="creativeIndex">--</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">Connection</span>
+                <span class="metric-value" id="connectionStatus">CHECKING...</span>
+            </div>
+            
+            <div class="tags-container" id="recentTags">
+                <!-- Tags will appear here -->
+            </div>
+        </div>
+        
+        <!-- CENTER: KAHOTIA -->
+        <div class="panel kahotia-container" id="kahotiaPanel">
+            <div class="kahotia-avatar" id="kahotiaAvatar">
+                <img src="kahotia.jpg" alt="Kahotia" onerror="this.src='https://placehold.co/200x200/0a0a0f/00f0ff?text=KAHOTIA'">
+            </div>
+            <div class="kahotia-status">
+                <span class="status-dot"></span>
+                <span id="kahotiaStatus">WATCHING</span>
+            </div>
+        </div>
+        
+        <!-- RIGHT: THE GALLERY -->
+        <div class="panel">
+            <div class="panel-title">🎨 THE GALLERY</div>
+            <div class="gallery-grid">
+                <div class="gallery-item">[CONCEPT_01]</div>
+                <div class="gallery-item">[LYRIC_02]</div>
+                <div class="gallery-item">[SKETCH_03]</div>
+                <div class="gallery-item">[METRIC_04]</div>
+            </div>
+        </div>
+        
+        <!-- BOTTOM: CHAT -->
+        <div class="panel chat-section">
+            <div class="panel-title">👁️ THE ORACLE // COMMUNE WITH KAHOTIA</div>
+            <div class="chat-container" id="chatContainer">
+                <div class="chat-message system">>> KAHOTIA BRAIN CONNECTED. The Thought Police awaits your queries.</div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Query the Wave... or pay your toll...">
+                <button class="send-btn" id="sendBtn">TRANSMIT</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        
+        // Backend URL - change this when deploying
+        const BACKEND_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000' 
+            : window.location.origin;
+        
+        // Supabase client - initialized later
+        let supabaseClient = null;
+        
+        // State
+        let conversationHistory = [];
+        let thoughtCount = 0;
+        let tollPaid = false;
+        
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        
+        async function init() {
+            console.log('>> Initializing THE BOOK OF TEE...');
+            console.log('>> Backend URL:', BACKEND_URL);
+            
+            // Set up event listeners
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            document.getElementById('chatInput').addEventListener('keypress', handleEnter);
+            document.getElementById('kahotiaAvatar').addEventListener('click', kahotiaSpeak);
+            document.getElementById('tollBtn').addEventListener('click', payToll);
+            document.getElementById('tollInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') payToll();
+            });
+            
+            // Check backend connection
+            try {
+                const response = await fetch(BACKEND_URL + '/config');
+                const config = await response.json();
+                
+                console.log('>> Config received:', config);
+                
+                // Initialize Supabase
+                if (config.supabase_url && config.supabase_key && window.supabase) {
+                    supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_key);
+                    console.log('>> Supabase connected');
+                }
+                
+                // Update UI
+                document.getElementById('connectionStatus').textContent = config.backend_status.toUpperCase();
+                document.getElementById('connectionStatus').className = 
+                    'metric-value ' + (config.backend_status === 'online' ? '' : 'warning');
+                
+                // Load thought count from Supabase
+                await loadThoughtCount();
+                
+            } catch (error) {
+                console.error('>> Backend connection failed:', error);
+                document.getElementById('connectionStatus').textContent = 'OFFLINE';
+                document.getElementById('connectionStatus').className = 'metric-value critical';
+            }
+            
+            // Check if toll is due (random chance for demo - disabled for now)
+            // if (Math.random() < 0.3 && !tollPaid) {
+            //     setTimeout(showTollOverlay, 3000);
+            // }
+            
+            console.log('>> Initialization complete');
+        }
+        
+        // ============================================
+        // SUPABASE FUNCTIONS
+        // ============================================
+        
+        async function loadThoughtCount() {
+            if (!supabaseClient) {
+                console.log('>> Supabase not available, skipping thought count');
+                return;
+            }
+            
+            try {
+                const { count, error } = await supabaseClient
+                    .from('nodes')
+                    .select('*', { count: 'exact', head: true });
+                
+                if (error) throw error;
+                
+                thoughtCount = count || 0;
+                document.getElementById('thoughtCount').textContent = thoughtCount;
+            } catch (error) {
+                console.error('>> Error loading thought count:', error);
+            }
+        }
+        
+        async function saveThought(content, tags) {
+            tags = tags || [];
+            if (!supabaseClient) {
+                console.log('>> Supabase not available, thought not saved');
+                return null;
+            }
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('nodes')
+                    .insert({
+                        content: content,
+                        type: tags[0] || 'thought',
+                        tags: tags,
+                        created_at: new Date().toISOString()
+                    })
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                thoughtCount++;
+                document.getElementById('thoughtCount').textContent = thoughtCount;
+                
+                return data;
+            } catch (error) {
+                console.error('>> Error saving thought:', error);
+                return null;
+            }
+        }
+        
+        // ============================================
+        // CHAT FUNCTIONS
+        // ============================================
+        
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            console.log('>> Sending message:', message);
+            
+            // Clear input
+            input.value = '';
+            
+            // Add user message to chat
+            addChatMessage(message, 'user');
+            
+            // Add to history
+            conversationHistory.push({ role: 'user', content: message });
+            
+            // Disable send button
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="loading"></span>';
+            
+            // Update Kahotia status
+            document.getElementById('kahotiaStatus').textContent = 'PROCESSING...';
+            
+            try {
+                const response = await fetch(BACKEND_URL + '/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        history: conversationHistory
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('>> Response:', data);
+                
+                if (data.success) {
+                    addChatMessage(data.response, 'kahotia');
+                    conversationHistory.push({ role: 'assistant', content: data.response });
+                    
+                    // Auto-tag the message
+                    await tagMessage(message);
+                } else {
+                    addChatMessage(data.error || 'Connection failed', 'system');
+                }
+                
+            } catch (error) {
+                console.error('>> Chat error:', error);
+                addChatMessage('>> TRANSMISSION ERROR: ' + error.message, 'system');
+            }
+            
+            // Re-enable send button
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = 'TRANSMIT';
+            document.getElementById('kahotiaStatus').textContent = 'WATCHING';
+        }
+        
+        function addChatMessage(text, type) {
+            const container = document.getElementById('chatContainer');
+            const div = document.createElement('div');
+            div.className = 'chat-message ' + type;
+            div.textContent = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function handleEnter(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        // ============================================
+        // TAGGING FUNCTIONS
+        // ============================================
+        
+        async function tagMessage(message) {
+            try {
+                const response = await fetch(BACKEND_URL + '/tag', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ thought: message })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.tags) {
+                    displayTags(data.tags);
+                    await saveThought(message, data.tags);
+                }
+            } catch (error) {
+                console.error('>> Tagging failed:', error);
+            }
+        }
+        
+        function displayTags(tags) {
+            const container = document.getElementById('recentTags');
+            
+            tags.forEach(function(tag) {
+                const tagEl = document.createElement('span');
+                tagEl.className = 'tag';
+                
+                // Color based on type
+                if (['reactor', 'metric', 'sop'].indexOf(tag) !== -1) {
+                    tagEl.classList.add('reactor');
+                } else if (['wave', 'lyric', 'sketch', 'concept'].indexOf(tag) !== -1) {
+                    tagEl.classList.add('wave');
+                }
+                
+                tagEl.textContent = tag.toUpperCase();
+                container.insertBefore(tagEl, container.firstChild);
+                
+                // Keep only last 6 tags visible
+                while (container.children.length > 6) {
+                    container.removeChild(container.lastChild);
+                }
+            });
+        }
+        
+        // ============================================
+        // THOUGHT TOLL FUNCTIONS
+        // ============================================
+        
+        function showTollOverlay() {
+            document.getElementById('tollOverlay').classList.add('active');
+            document.getElementById('tollInput').focus();
+        }
+        
+        async function payToll() {
+            const input = document.getElementById('tollInput');
+            const thought = input.value.trim();
+            
+            if (!thought) {
+                input.style.borderColor = '#ff4444';
+                return;
+            }
+            
+            // Save the toll thought
+            await saveThought(thought, ['toll']);
+            
+            // Update UI
+            document.getElementById('tollOverlay').classList.remove('active');
+            document.getElementById('lastToll').textContent = new Date().toLocaleTimeString();
+            
+            // Add to chat
+            addChatMessage('>> TOLL PAID: "' + thought + '"', 'system');
+            addChatMessage('>> ACCESS GRANTED. The thought has been logged. Continue...', 'kahotia');
+            
+            tollPaid = true;
+            input.value = '';
+            input.style.borderColor = '';
+        }
+        
+        // ============================================
+        // KAHOTIA INTERACTIONS
+        // ============================================
+        
+        function kahotiaSpeak() {
+            const phrases = [
+                ">> The structured side whispers ISO... the cosmic side roars creation...",
+                ">> No thought is wasted. Even this click feeds the graph.",
+                ">> You summoned me. Now pay the toll of attention.",
+                ">> Half fabric, half cosmos. Which half are YOU today?",
+                ">> The Synaptic Graph grows with every interaction...",
+                ">> *stares in dual-consciousness*"
+            ];
+            
+            const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+            addChatMessage(phrase, 'kahotia');
+        }
+        
+        // ============================================
+        // START
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
