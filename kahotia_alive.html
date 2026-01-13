@@ -57,10 +57,10 @@
             background: transparent;
             border: 1px solid var(--accent-magenta);
             border-radius: 5px;
-            padding: 10px 20px;
+            padding: 10px 15px;
             color: var(--accent-magenta);
             font-family: inherit;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
@@ -75,16 +75,14 @@
             box-shadow: var(--glow-magenta);
         }
         
-        .nav-link .nav-icon {
-            font-size: 1.1rem;
-        }
-        
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
             .nav-link {
                 position: static;
                 transform: none;
-                margin-top: 15px;
+                margin-top: 12px;
                 display: inline-flex;
+                font-size: 0.75rem;
+                padding: 8px 12px;
             }
         }
         
@@ -375,6 +373,35 @@
             cursor: not-allowed;
         }
         
+        .mic-btn {
+            background: transparent;
+            border: 1px solid var(--accent-gold);
+            border-radius: 5px;
+            padding: 12px 15px;
+            color: var(--accent-gold);
+            font-family: inherit;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .mic-btn:hover {
+            background: rgba(255, 215, 0, 0.1);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        .mic-btn.recording {
+            background: rgba(255, 0, 0, 0.2);
+            border-color: #ff4444;
+            color: #ff4444;
+            animation: pulse-recording 1s infinite;
+        }
+        
+        @keyframes pulse-recording {
+            0%, 100% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.6); }
+        }
+        
         /* ============================================
            THOUGHT TOLL OVERLAY
            ============================================ */
@@ -530,8 +557,8 @@
         <h1>THE BOOK OF TEE</h1>
         <p class="subtitle">>> Synaptic Command Center // Kahotia is Watching</p>
         <a href="konscious_ionganicised.html" class="nav-link">
-            <span class="nav-icon">🌌</span>
-            <span>KONSCIOUS IONGANICISED</span>
+            <span>🌌</span>
+            <span>KONSCIOUS</span>
             <span>→</span>
         </a>
     </header>
@@ -540,7 +567,7 @@
     <div class="main-container">
         <!-- LEFT: THE REACTOR -->
         <div class="panel">
-            <div class="panel-title">âš›ï¸ THE REACTOR</div>
+            <div class="panel-title">⚛️ THE REACTOR</div>
             <div class="metric-item">
                 <span class="metric-label">System Status</span>
                 <span class="metric-value" id="systemStatus">ONLINE</span>
@@ -580,7 +607,7 @@
         
         <!-- RIGHT: THE GALLERY -->
         <div class="panel">
-            <div class="panel-title">ðŸŽ¨ THE GALLERY</div>
+            <div class="panel-title">🎨 THE GALLERY</div>
             <div class="gallery-grid">
                 <div class="gallery-item">[CONCEPT_01]</div>
                 <div class="gallery-item">[LYRIC_02]</div>
@@ -591,11 +618,12 @@
         
         <!-- BOTTOM: CHAT -->
         <div class="panel chat-section">
-            <div class="panel-title">ðŸ‘ï¸ THE ORACLE // COMMUNE WITH KAHOTIA</div>
+            <div class="panel-title">👁️ THE ORACLE // COMMUNE WITH KAHOTIA</div>
             <div class="chat-container" id="chatContainer">
                 <div class="chat-message system">>> KAHOTIA BRAIN CONNECTED. The Thought Police awaits your queries.</div>
             </div>
             <div class="chat-input-container">
+                <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Voice Input">🎤</button>
                 <input type="text" class="chat-input" id="chatInput" placeholder="Query the Wave... or pay your toll..." onkeypress="handleEnter(event)">
                 <button class="send-btn" id="sendBtn" onclick="sendMessage()">TRANSMIT</button>
             </div>
@@ -628,6 +656,9 @@
         
         async function init() {
             console.log('>> Initializing THE BOOK OF TEE...');
+            
+            // Initialize voice input
+            initVoiceInput();
             
             // Check backend connection
             try {
@@ -858,6 +889,70 @@
             
             tollPaid = true;
             input.value = '';
+        }
+        
+        // ============================================
+        // VOICE INPUT (Web Speech API)
+        // ============================================
+        
+        let recognition = null;
+        let isRecording = false;
+        
+        function initVoiceInput() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+                
+                recognition.onstart = () => {
+                    isRecording = true;
+                    document.getElementById('micBtn').classList.add('recording');
+                    document.getElementById('chatInput').placeholder = 'Listening...';
+                };
+                
+                recognition.onresult = (event) => {
+                    let transcript = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        transcript += event.results[i][0].transcript;
+                    }
+                    document.getElementById('chatInput').value = transcript;
+                };
+                
+                recognition.onerror = (event) => {
+                    console.error('>> Voice error:', event.error);
+                    stopRecording();
+                };
+                
+                recognition.onend = () => {
+                    stopRecording();
+                };
+                
+                console.log('>> Voice input initialized');
+            } else {
+                console.log('>> Voice input not supported');
+                document.getElementById('micBtn').style.display = 'none';
+            }
+        }
+        
+        function toggleVoiceInput() {
+            if (!recognition) {
+                addChatMessage('>> Voice input not supported in this browser', 'system');
+                return;
+            }
+            
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
+        
+        function stopRecording() {
+            isRecording = false;
+            document.getElementById('micBtn').classList.remove('recording');
+            document.getElementById('chatInput').placeholder = 'Query the Wave... or pay your toll...';
         }
         
         // ============================================
