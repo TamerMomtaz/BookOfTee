@@ -530,9 +530,26 @@
             animation: spin 1s linear infinite;
         }
         
-        @keyframes spin {
+       @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            z-index: 9999;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s;
+            pointer-events: none;
+        }
+        .toast.success { background: rgba(0,255,136,0.2); border: 1px solid #00ff88; color: #00ff88; }
+        .toast.error { background: rgba(255,0,0,0.2); border: 1px solid #ff4444; color: #ff4444; }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } }
+        @keyframes toastOut { to { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
     </style>
 </head>
 <body>
@@ -732,12 +749,14 @@
                 if (error) throw error;
                 
                 console.log('>> Thought saved successfully:', data.id);
+                showToast('💾 Thought saved!', 'success');
                 thoughtCount++;
                 document.getElementById('thoughtCount').textContent = thoughtCount;
                 
                 return data;
-            } catch (error) {
+           } catch (error) {
                 console.error('>> Error saving thought:', error);
+                showToast('❌ Save failed!', 'error');
                 return null;
             }
         }
@@ -832,6 +851,13 @@
             }
         }
         
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }        
         // ============================================
         // TAGGING FUNCTIONS
         // ============================================
