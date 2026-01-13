@@ -711,9 +711,13 @@
         }
         
         async function saveThought(content, tags = []) {
-            if (!supabaseClient) return null;
+            if (!supabaseClient) {
+                console.log('>> Cannot save thought: Supabase not connected');
+                return null;
+            }
             
             try {
+                console.log('>> Saving thought to Supabase:', { content: content.substring(0, 50), tags });
                 const { data, error } = await supabaseClient
                     .from('nodes')
                     .insert({
@@ -727,6 +731,7 @@
                 
                 if (error) throw error;
                 
+                console.log('>> Thought saved successfully:', data.id);
                 thoughtCount++;
                 document.getElementById('thoughtCount').textContent = thoughtCount;
                 
@@ -765,6 +770,7 @@
             document.getElementById('kahotiaStatus').textContent = 'PROCESSING...';
             
             try {
+                console.log('>> Sending message to:', `${BACKEND_URL}/chat`);
                 const response = await fetch(`${BACKEND_URL}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -774,19 +780,22 @@
                     })
                 });
                 
+                console.log('>> Response status:', response.status);
                 const data = await response.json();
+                console.log('>> Response data:', data);
                 
                 if (data.success) {
                     addChatMessage(data.response, 'kahotia');
                     conversationHistory.push({ role: 'assistant', content: data.response });
                     
-                    // Auto-tag the message
+                    // Auto-tag and save the message
                     await tagMessage(message);
                 } else {
-                    addChatMessage(data.error || 'Connection failed', 'system');
+                    addChatMessage(`>> ERROR: ${data.error || 'Unknown error'}`, 'system');
                 }
                 
             } catch (error) {
+                console.error('>> Chat error:', error);
                 addChatMessage(`>> TRANSMISSION ERROR: ${error.message}`, 'system');
             }
             
@@ -817,6 +826,7 @@
         
         async function tagMessage(message) {
             try {
+                console.log('>> Tagging message...');
                 const response = await fetch(`${BACKEND_URL}/tag`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -824,13 +834,21 @@
                 });
                 
                 const data = await response.json();
+                console.log('>> Tag response:', data);
                 
                 if (data.success && data.tags) {
                     displayTags(data.tags);
                     await saveThought(message, data.tags);
+                } else {
+                    // Save with default tag even if tagging failed
+                    console.log('>> Tagging failed, saving with default tag');
+                    await saveThought(message, ['thought']);
                 }
             } catch (error) {
                 console.error('>> Tagging failed:', error);
+                // Still try to save the thought with a default tag
+                console.log('>> Saving with default tag due to error');
+                await saveThought(message, ['thought']);
             }
         }
         
@@ -897,36 +915,55 @@
         
         let recognition = null;
         let isRecording = false;
+        let finalTranscript = ''; // Accumulate final results
         
         function initVoiceInput() {
             if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 recognition = new SpeechRecognition();
-                recognition.continuous = false;
+                recognition.continuous = true;  // Keep listening until manually stopped
                 recognition.interimResults = true;
                 recognition.lang = 'en-US';
                 
                 recognition.onstart = () => {
                     isRecording = true;
+                    finalTranscript = document.getElementById('chatInput').value; // Keep existing text
                     document.getElementById('micBtn').classList.add('recording');
-                    document.getElementById('chatInput').placeholder = 'Listening...';
+                    document.getElementById('chatInput').placeholder = 'Listening... click mic again to stop';
                 };
                 
                 recognition.onresult = (event) => {
-                    let transcript = '';
+                    let interimTranscript = '';
+                    
                     for (let i = event.resultIndex; i < event.results.length; i++) {
-                        transcript += event.results[i][0].transcript;
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript + ' ';
+                        } else {
+                            interimTranscript += transcript;
+                        }
                     }
-                    document.getElementById('chatInput').value = transcript;
+                    
+                    // Show final + interim (interim in lighter style)
+                    document.getElementById('chatInput').value = finalTranscript + interimTranscript;
                 };
                 
                 recognition.onerror = (event) => {
                     console.error('>> Voice error:', event.error);
-                    stopRecording();
+                    if (event.error !== 'no-speech') {
+                        stopRecording();
+                    }
                 };
                 
                 recognition.onend = () => {
-                    stopRecording();
+                    // If still supposed to be recording, restart (handles Chrome's auto-stop)
+                    if (isRecording) {
+                        try {
+                            recognition.start();
+                        } catch (e) {
+                            stopRecording();
+                        }
+                    }
                 };
                 
                 console.log('>> Voice input initialized');
@@ -943,8 +980,13 @@
             }
             
             if (isRecording) {
+                // Stop recording - user will manually send when ready
+                isRecording = false;
                 recognition.stop();
+                stopRecording();
             } else {
+                // Start recording
+                finalTranscript = document.getElementById('chatInput').value;
                 recognition.start();
             }
         }
