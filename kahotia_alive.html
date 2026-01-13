@@ -639,7 +639,7 @@
         const BACKEND_URL = 'https://web-production-f5f1e.up.railway.app';
         
         // Supabase config (loaded from backend)
-        let supabase = null;
+        let supabaseClient = null;
         
         // State
         let conversationHistory = [];
@@ -667,7 +667,7 @@
                 
                 // Initialize Supabase
                 if (config.supabase_url && config.supabase_key) {
-                    supabase = window.supabase.createClient(config.supabase_url, config.supabase_key);
+                    supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_key);
                     console.log('>> Supabase connected');
                 }
                 
@@ -696,10 +696,10 @@
         // ============================================
         
         async function loadThoughtCount() {
-            if (!supabase) return;
+            if (!supabaseClient) return;
             
             try {
-                const { count } = await supabase
+                const { count } = await supabaseClient
                     .from('nodes')
                     .select('*', { count: 'exact', head: true });
                 
@@ -711,10 +711,10 @@
         }
         
         async function saveThought(content, tags = []) {
-            if (!supabase) return null;
+            if (!supabaseClient) return null;
             
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('nodes')
                     .insert({
                         content: content,
