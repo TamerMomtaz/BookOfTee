@@ -270,15 +270,7 @@
             color: var(--text-dim);
             letter-spacing: 1px;
         }
-        <!-- FILTER PANEL -->
-<div class="filter-panel" id="filterPanel">
-    <div class="filter-title">⚡ FILTER TYPES</div>
-    <div id="filterItems"></div>
-    <div class="filter-actions">
-        <button class="filter-btn" onclick="showAllTypes()">ALL</button>
-        <button class="filter-btn" onclick="hideAllTypes()">NONE</button>
-    </div>
-</div>
+        
         /* ============================================
            GRAPH CONTAINER
            ============================================ */
@@ -471,10 +463,6 @@
             height: 12px;
             border-radius: 50%;
         }
-       <div class="legend-item">
-    <div class="legend-dot" style="background: var(--node-bio);"></div>
-    <span>Bio</span>
-</div> 
         /* ============================================
            CONTROLS
            ============================================ */
@@ -509,7 +497,8 @@
             box-shadow: var(--glow-cyan);
             transform: scale(1.1);
         }
-        <button class="control-btn" id="spreadNodes" title="Spread Nodes">⇔</button>
+        
+       
         /* ============================================
            LOADING STATE
            ============================================ */
@@ -679,30 +668,15 @@
     </div>
     
     <!-- HEADER -->
-    <header class="header">
-        <div class="header-left">
-            <a href="kahotia_alive.html" class="back-btn">
-                <span>←</span>
-                <span>KAHOTIA</span>
-            </a>
-            <div class="title-container">
-                <h1>KONSCIOUS IONGANICISED</h1>
-                <div class="subtitle">>> THE SYNAPTIC GRAPH // THOUGHTS UNBOXED</div>
-            </div>
+    <!-- FILTER PANEL -->
+    <div class="filter-panel" id="filterPanel">
+        <div class="filter-title">⚡ FILTER TYPES</div>
+        <div id="filterItems"></div>
+        <div class="filter-actions">
+            <button class="filter-btn" onclick="showAllTypes()">ALL</button>
+            <button class="filter-btn" onclick="hideAllTypes()">NONE</button>
         </div>
-        <div class="header-right">
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-value" id="nodeCount">0</div>
-                    <div class="stat-label">NODES</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value" id="edgeCount">0</div>
-                    <div class="stat-label">EDGES</div>
-                </div>
-            </div>
-        </div>
-    </header>
+    </div>
     
     <!-- GRAPH CONTAINER -->
     <div class="graph-container">
@@ -740,6 +714,10 @@
             <div class="legend-dot" style="background: var(--node-toll);"></div>
             <span>Toll</span>
         </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #00ddaa;"></div>
+            <span>Bio</span>
+        </div>
     </div>
     
     <!-- CONTROLS -->
@@ -747,6 +725,7 @@
         <button class="control-btn" id="zoomIn" title="Zoom In">+</button>
         <button class="control-btn" id="zoomOut" title="Zoom Out">−</button>
         <button class="control-btn" id="resetView" title="Reset View">⟲</button>
+        <button class="control-btn" id="spreadNodes" title="Spread Nodes">⇔</button>
         <button class="control-btn" id="refreshData" title="Refresh">↻</button>
     </div>
     
@@ -801,11 +780,30 @@
         let svg, g, linkGroup, nodeGroup;
         let zoom;
         
-        // Color mapping for node types
-       <div class="legend-item">
-    <div class="legend-dot" style="background: var(--node-bio);"></div>
-    <span>Bio</span>
-</div>
+       // Color mapping for node types
+        const typeColors = {
+            philosophy: '#9966ff',
+            concept: '#9966ff',
+            lyrics: '#ffd700',
+            lyric: '#ffd700',
+            engineering: '#44aaff',
+            plant: '#44aaff',
+            metric: '#44aaff',
+            sop: '#44aaff',
+            code: '#00ff88',
+            thought: '#ff66aa',
+            art: '#ff8844',
+            sketch: '#ff8844',
+            toll: '#ff00ff',
+            bio: '#00ddaa',
+            untagged: '#888888'
+        };
+        
+        // Filter state variables
+        let typeFilters = {};
+        let typeCounts = {};
+        let currentZoom = 1;
+        
         // ============================================
         // INITIALIZATION
         // ============================================
@@ -840,177 +838,108 @@
                 document.getElementById('loadingOverlay').classList.add('hidden');
             }, 1000);
         }
-        // Build filter panel from node types
-function buildFilterPanel() {
-    const container = document.getElementById('filterItems');
-    container.innerHTML = '';
-    
-    typeCounts = {};
-    nodes.forEach(n => {
-        const t = n.type || 'thought';
-        typeCounts[t] = (typeCounts[t] || 0) + 1;
-        if (typeFilters[t] === undefined) typeFilters[t] = true;
-    });
-    
-    const sortedTypes = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
-    
-    sortedTypes.forEach(([type, count]) => {
-        const item = document.createElement('div');
-        item.className = 'filter-item' + (typeFilters[type] ? '' : ' disabled');
-        item.onclick = () => toggleType(type);
         
-        const dot = document.createElement('div');
-        dot.className = 'filter-dot';
-        dot.style.background = typeColors[type] || typeColors.thought;
+       // ============================================
+        // FILTER FUNCTIONS
+        // ============================================
         
-        const label = document.createElement('span');
-        label.textContent = type.charAt(0).toUpperCase() + type.slice(1);
-        
-        const countEl = document.createElement('span');
-        countEl.className = 'filter-count';
-        countEl.textContent = count;
-        
-        item.appendChild(dot);
-        item.appendChild(label);
-        item.appendChild(countEl);
-        container.appendChild(item);
-    });
-}
-
-function toggleType(type) {
-    typeFilters[type] = !typeFilters[type];
-    updateFilterUI();
-    updateVisibility();
-}
-
-function showAllTypes() {
-    Object.keys(typeFilters).forEach(t => typeFilters[t] = true);
-    updateFilterUI();
-    updateVisibility();
-}
-
-function hideAllTypes() {
-    Object.keys(typeFilters).forEach(t => typeFilters[t] = false);
-    updateFilterUI();
-    updateVisibility();
-}
-
-function updateFilterUI() {
-    document.querySelectorAll('.filter-item').forEach(item => {
-        const type = item.querySelector('span').textContent.toLowerCase();
-        item.classList.toggle('disabled', !typeFilters[type]);
-    });
-}
-
-function updateVisibility() {
-    const showLabels = currentZoom >= 0.5;
-    
-    nodeGroup.selectAll('.node').each(function(d) {
-        const node = d3.select(this);
-        const typeEnabled = typeFilters[d.type] !== false;
-        node.classed('hidden', !typeEnabled);
-    });
-    
-    nodeGroup.selectAll('.node-label').classed('hidden', !showLabels);
-    
-    linkGroup.selectAll('line').each(function(d) {
-        const link = d3.select(this);
-        const sourceVisible = typeFilters[d.source.type] !== false;
-        const targetVisible = typeFilters[d.target.type] !== false;
-        link.classed('hidden', !sourceVisible || !targetVisible);
-    });
-}
-
-function spreadNodes() {
-    if (!simulation) return;
-    simulation
-        .force('charge', d3.forceManyBody().strength(-800).distanceMax(600))
-        .force('collision', d3.forceCollide().radius(80));
-    simulation.alpha(1).restart();
-    
-    setTimeout(() => {
-        simulation
-            .force('charge', d3.forceManyBody().strength(-400).distanceMax(500))
-            .force('collision', d3.forceCollide().radius(60));
-    }, 3000);
-}
-
-
-/* ===== MODIFY initGraph() - Add zoom tracking ===== */
-
-// In the zoom handler, add:
-zoom = d3.zoom()
-    .scaleExtent([0.1, 4])
-    .on('zoom', (event) => {
-        g.attr('transform', event.transform);
-        currentZoom = event.transform.k;
-        updateVisibility();
-    });
-
-// Add spread button handler:
-document.getElementById('spreadNodes').onclick = spreadNodes;
-
-
-/* ===== MODIFY renderGraph() - Better force settings ===== */
-
-// Replace the simulation creation with:
-simulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(edges)
-        .id(d => d.id)
-        .distance(200)      // Increased from 150
-        .strength(0.3))     // Reduced
-    .force('charge', d3.forceManyBody()
-        .strength(-400)     // Increased repulsion
-        .distanceMax(500))
-    .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('collision', d3.forceCollide().radius(60));  // Larger collision
-
-
-/* ===== MODIFY loadGraphData() - Add buildFilterPanel call ===== */
-
-// After renderGraph(), add:
-buildFilterPanel();
-
-
-/* ===== MODIFY generateEdgesFromTags() - Reduce density ===== */
-
-// Replace the function with this less aggressive version:
-function generateEdgesFromTags(nodes) {
-    const generatedEdges = [];
-    const tagMap = {};
-    
-    nodes.forEach(node => {
-        if (node.tags && node.tags.length > 0) {
-            node.tags.forEach(tag => {
-                const normalizedTag = tag.toLowerCase();
-                // Skip overly common tags
-                if (['cv', 'opera', 'biography', 'the_unshared'].includes(normalizedTag)) return;
-                if (!tagMap[normalizedTag]) tagMap[normalizedTag] = [];
-                tagMap[normalizedTag].push(node.id);
+        function buildFilterPanel() {
+            const container = document.getElementById('filterItems');
+            container.innerHTML = '';
+            
+            typeCounts = {};
+            nodes.forEach(n => {
+                const t = n.type || 'thought';
+                typeCounts[t] = (typeCounts[t] || 0) + 1;
+                if (typeFilters[t] === undefined) typeFilters[t] = true;
+            });
+            
+            const sortedTypes = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
+            
+            sortedTypes.forEach(([type, count]) => {
+                const item = document.createElement('div');
+                item.className = 'filter-item' + (typeFilters[type] ? '' : ' disabled');
+                item.onclick = () => toggleType(type);
+                
+                const dot = document.createElement('div');
+                dot.className = 'filter-dot';
+                dot.style.background = typeColors[type] || typeColors.thought;
+                
+                const label = document.createElement('span');
+                label.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+                
+                const countEl = document.createElement('span');
+                countEl.className = 'filter-count';
+                countEl.textContent = count;
+                
+                item.appendChild(dot);
+                item.appendChild(label);
+                item.appendChild(countEl);
+                container.appendChild(item);
             });
         }
-    });
-    
-    // Only connect if 2-8 nodes share the tag
-    Object.values(tagMap).forEach(nodeIds => {
-        if (nodeIds.length >= 2 && nodeIds.length <= 8) {
-            for (let i = 0; i < nodeIds.length; i++) {
-                for (let j = i + 1; j < nodeIds.length; j++) {
-                    const exists = generatedEdges.some(e => 
-                        (e.source === nodeIds[i] && e.target === nodeIds[j]) ||
-                        (e.source === nodeIds[j] && e.target === nodeIds[i])
-                    );
-                    if (!exists) {
-                        generatedEdges.push({ source: nodeIds[i], target: nodeIds[j], weight: 1 });
-                    }
-                }
-            }
+        
+        function toggleType(type) {
+            typeFilters[type] = !typeFilters[type];
+            updateFilterUI();
+            updateVisibility();
         }
-    });
-    
-    // Remove type-based clustering entirely (was causing the dense cluster)
-    return generatedEdges;
-}
+        
+        function showAllTypes() {
+            Object.keys(typeFilters).forEach(t => typeFilters[t] = true);
+            updateFilterUI();
+            updateVisibility();
+        }
+        
+        function hideAllTypes() {
+            Object.keys(typeFilters).forEach(t => typeFilters[t] = false);
+            updateFilterUI();
+            updateVisibility();
+        }
+        
+        function updateFilterUI() {
+            document.querySelectorAll('.filter-item').forEach(item => {
+                const label = item.querySelector('span');
+                if (label) {
+                    const type = label.textContent.toLowerCase();
+                    item.classList.toggle('disabled', !typeFilters[type]);
+                }
+            });
+        }
+        
+        function updateVisibility() {
+            const showLabels = currentZoom >= 0.5;
+            
+            nodeGroup.selectAll('.node').each(function(d) {
+                const node = d3.select(this);
+                const typeEnabled = typeFilters[d.type] !== false;
+                node.classed('hidden', !typeEnabled);
+            });
+            
+            nodeGroup.selectAll('.node-label').classed('hidden', !showLabels);
+            
+            linkGroup.selectAll('line').each(function(d) {
+                const link = d3.select(this);
+                const sourceVisible = typeFilters[d.source.type] !== false;
+                const targetVisible = typeFilters[d.target.type] !== false;
+                link.classed('hidden', !sourceVisible || !targetVisible);
+            });
+        }
+        
+        function spreadNodes() {
+            if (!simulation) return;
+            simulation
+                .force('charge', d3.forceManyBody().strength(-800).distanceMax(600))
+                .force('collision', d3.forceCollide().radius(80));
+            simulation.alpha(1).restart();
+            
+            setTimeout(() => {
+                simulation
+                    .force('charge', d3.forceManyBody().strength(-400).distanceMax(500))
+                    .force('collision', d3.forceCollide().radius(60));
+            }, 3000);
+        }
+        
         // ============================================
         // GRAPH INITIALIZATION
         // ============================================
@@ -1060,11 +989,13 @@ function generateEdgesFromTags(nodes) {
             // Create zoomable group
             g = svg.append('g');
             
-            // Add zoom behavior
+           // Add zoom behavior
             zoom = d3.zoom()
-                .scaleExtent([0.2, 4])
+                .scaleExtent([0.1, 4])
                 .on('zoom', (event) => {
                     g.attr('transform', event.transform);
+                    currentZoom = event.transform.k;
+                    updateVisibility();
                 });
             
             svg.call(zoom);
@@ -1087,6 +1018,7 @@ function generateEdgesFromTags(nodes) {
             };
             
             document.getElementById('refreshData').onclick = loadGraphData;
+            document.getElementById('spreadNodes').onclick = spreadNodes;
         }
         
         // ============================================
@@ -1151,8 +1083,11 @@ function generateEdgesFromTags(nodes) {
                 document.getElementById('nodeCount').textContent = nodes.length;
                 document.getElementById('edgeCount').textContent = edges.length;
                 
-                // Render the graph
+               // Render the graph
                 renderGraph();
+                
+                // Build filter panel
+                buildFilterPanel();
                 
                 // Hide empty state
                 document.getElementById('emptyState').classList.remove('active');
