@@ -5,6 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>THE BOOK OF TEE - Kahotia Lives</title>
     
+    <!-- APP ICONS FOR HOME SCREEN -->
+    <link rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/TamerMomtaz/BookOfTee/main/kahotia-icon.jpg">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/TamerMomtaz/BookOfTee/main/kahotia-icon.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Kahotia">
+    <meta name="theme-color" content="#0a0a0f">
+    
+    <!-- Android PWA -->
+    <link rel="manifest" href="data:application/json,{
+        &quot;name&quot;: &quot;THE BOOK OF TEE&quot;,
+        &quot;short_name&quot;: &quot;Kahotia&quot;,
+        &quot;icons&quot;: [{
+            &quot;src&quot;: &quot;https://raw.githubusercontent.com/TamerMomtaz/BookOfTee/main/kahotia-icon.jpg&quot;,
+            &quot;sizes&quot;: &quot;512x512&quot;,
+            &quot;type&quot;: &quot;image/jpeg&quot;
+        }],
+        &quot;start_url&quot;: &quot;.&quot;,
+        &quot;display&quot;: &quot;standalone&quot;,
+        &quot;background_color&quot;: &quot;#0a0a0f&quot;,
+        &quot;theme_color&quot;: &quot;#0a0a0f&quot;
+    }">
+    
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
@@ -317,11 +340,11 @@
             color: var(--text-dim);
         }
         
-        .send-btn {
+        .send-btn, .voice-btn {
             background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
             border: none;
             border-radius: 5px;
-            padding: 12px 25px;
+            padding: 12px 20px;
             color: #000;
             font-family: inherit;
             font-weight: bold;
@@ -329,14 +352,39 @@
             transition: all 0.3s ease;
         }
         
-        .send-btn:hover {
+        .voice-btn {
+            background: linear-gradient(135deg, var(--accent-magenta), var(--accent-cyan));
+            padding: 12px 15px;
+            font-size: 1.2rem;
+        }
+        
+        .voice-btn.listening {
+            animation: pulse-glow 0.5s ease-in-out infinite;
+            background: var(--accent-magenta);
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 10px var(--accent-magenta); }
+            50% { box-shadow: 0 0 30px var(--accent-magenta), 0 0 50px var(--accent-magenta); }
+        }
+        
+        .send-btn:hover, .voice-btn:hover {
             transform: scale(1.05);
             box-shadow: var(--glow-cyan), var(--glow-magenta);
         }
         
-        .send-btn:disabled {
+        .send-btn:disabled, .voice-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+        
+        /* Voice indicator */
+        .voice-status {
+            text-align: center;
+            padding: 5px;
+            font-size: 0.8rem;
+            color: var(--accent-magenta);
+            min-height: 20px;
         }
         
         /* ============================================
@@ -529,7 +577,7 @@
         <!-- CENTER: KAHOTIA -->
         <div class="panel kahotia-container" id="kahotiaPanel">
             <div class="kahotia-avatar" id="kahotiaAvatar">
-                <img src="kahotia.jpg" alt="Kahotia" onerror="this.src='https://raw.githubusercontent.com/TamerMomtaz/BookOfTee/main/kahotia.jpg'">
+                <img src="https://raw.githubusercontent.com/TamerMomtaz/BookOfTee/main/kahotia.jpg" alt="Kahotia" onerror="this.src='https://raw.githubusercontent.com/TamerMomtaz/BookOfTee/main/kahotia-icon.jpg'">
             </div>
             <div class="kahotia-status">
                 <span class="status-dot"></span>
@@ -554,8 +602,10 @@
             <div class="chat-container" id="chatContainer">
                 <div class="chat-message system">>> KAHOTIA BRAIN CONNECTED. The Thought Police awaits your queries.</div>
             </div>
+            <div class="voice-status" id="voiceStatus"></div>
             <div class="chat-input-container">
                 <input type="text" class="chat-input" id="chatInput" placeholder="Query the Wave... or pay your toll...">
+                <button class="voice-btn" id="voiceBtn" title="Click to speak">🎤</button>
                 <button class="send-btn" id="sendBtn">TRANSMIT</button>
             </div>
         </div>
@@ -576,6 +626,12 @@
         let thoughtCount = 0;
         let tollPaid = false;
         
+        // Voice
+        let recognition = null;
+        let synthesis = window.speechSynthesis;
+        let isListening = false;
+        let voiceEnabled = true;
+        
         // ============================================
         // INITIALIZATION
         // ============================================
@@ -592,6 +648,12 @@
             document.getElementById('tollInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') payToll();
             });
+            
+            // Voice button
+            document.getElementById('voiceBtn').addEventListener('click', toggleVoiceInput);
+            
+            // Initialize speech recognition
+            initSpeechRecognition();
             
             // Check backend connection
             try {
@@ -621,6 +683,173 @@
             }
             
             console.log('>> Initialization complete');
+        }
+        
+        // ============================================
+        // SPEECH RECOGNITION (Voice Input)
+        // ============================================
+        
+        function initSpeechRecognition() {
+            // Check browser support
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                console.log('>> Speech recognition not supported');
+                document.getElementById('voiceBtn').style.display = 'none';
+                return;
+            }
+            
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            
+            recognition.onstart = function() {
+                isListening = true;
+                document.getElementById('voiceBtn').classList.add('listening');
+                document.getElementById('voiceStatus').textContent = '🎤 Listening...';
+                console.log('>> Voice recognition started');
+            };
+            
+            recognition.onresult = function(event) {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                document.getElementById('chatInput').value = transcript;
+                
+                // If this is a final result, send the message
+                if (event.results[event.results.length - 1].isFinal) {
+                    document.getElementById('voiceStatus').textContent = '✓ Got it!';
+                    setTimeout(function() {
+                        sendMessage();
+                    }, 500);
+                }
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('>> Voice recognition error:', event.error);
+                document.getElementById('voiceStatus').textContent = '⚠️ ' + event.error;
+                stopListening();
+            };
+            
+            recognition.onend = function() {
+                stopListening();
+            };
+            
+            console.log('>> Speech recognition initialized');
+        }
+        
+        function toggleVoiceInput() {
+            if (isListening) {
+                recognition.stop();
+                stopListening();
+            } else {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.error('>> Could not start recognition:', e);
+                }
+            }
+        }
+        
+        function stopListening() {
+            isListening = false;
+            document.getElementById('voiceBtn').classList.remove('listening');
+            setTimeout(function() {
+                document.getElementById('voiceStatus').textContent = '';
+            }, 2000);
+        }
+        
+        // ============================================
+        // SPEECH SYNTHESIS (Voice Output)
+        // ============================================
+        
+        function speakText(text) {
+            if (!voiceEnabled || !synthesis) return;
+            
+            // Cancel any ongoing speech
+            synthesis.cancel();
+            
+            // Clean the text (remove >> and special characters)
+            let cleanText = text
+                .replace(/>>/g, '')
+                .replace(/\*\*/g, '')
+                .replace(/\*/g, '')
+                .replace(/<<|>>/g, '')
+                .trim();
+            
+            // Create utterance
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            
+            // Try to find a good voice
+            const voices = synthesis.getVoices();
+            const preferredVoice = voices.find(v => 
+                v.name.includes('Female') || 
+                v.name.includes('Samantha') || 
+                v.name.includes('Victoria') ||
+                v.name.includes('Karen')
+            ) || voices[0];
+            
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+            }
+            
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
+            
+            // Update status while speaking
+            utterance.onstart = function() {
+                document.getElementById('kahotiaStatus').textContent = 'SPEAKING...';
+            };
+            
+            utterance.onend = function() {
+                document.getElementById('kahotiaStatus').textContent = 'WATCHING';
+            };
+            
+            synthesis.speak(utterance);
+        }
+        
+        // ============================================
+        // ELEVENLABS AUDIO PLAYBACK
+        // ============================================
+        
+        function playElevenLabsAudio(base64Audio) {
+            try {
+                // Convert base64 to blob
+                const byteCharacters = atob(base64Audio);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'audio/mpeg' });
+                
+                // Create audio element and play
+                const audioUrl = URL.createObjectURL(blob);
+                const audio = new Audio(audioUrl);
+                
+                audio.onplay = function() {
+                    document.getElementById('kahotiaStatus').textContent = 'SPEAKING...';
+                };
+                
+                audio.onended = function() {
+                    document.getElementById('kahotiaStatus').textContent = 'WATCHING';
+                    URL.revokeObjectURL(audioUrl);
+                };
+                
+                audio.onerror = function() {
+                    console.error('>> Audio playback error');
+                    document.getElementById('kahotiaStatus').textContent = 'WATCHING';
+                };
+                
+                audio.play();
+                
+            } catch (error) {
+                console.error('>> ElevenLabs audio error:', error);
+                // Fallback to browser TTS
+                speakText(text);
+            }
         }
         
         // ============================================
@@ -723,6 +952,13 @@
                 if (data.success) {
                     addChatMessage(data.response, 'kahotia');
                     conversationHistory.push({ role: 'assistant', content: data.response });
+                    
+                    // Play ElevenLabs audio if available, otherwise use browser TTS
+                    if (data.audio) {
+                        playElevenLabsAudio(data.audio);
+                    } else {
+                        speakText(data.response);
+                    }
                     
                     // Auto-tag the message
                     await tagMessage(message);
@@ -853,11 +1089,19 @@
             
             const phrase = phrases[Math.floor(Math.random() * phrases.length)];
             addChatMessage(phrase, 'kahotia');
+            speakText(phrase);
         }
         
         // ============================================
         // START
         // ============================================
+        
+        // Load voices when ready
+        if (synthesis) {
+            synthesis.onvoiceschanged = function() {
+                console.log('>> Voices loaded:', synthesis.getVoices().length);
+            };
+        }
         
         document.addEventListener('DOMContentLoaded', init);
     </script>
