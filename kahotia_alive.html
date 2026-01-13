@@ -635,12 +635,8 @@
         // CONFIGURATION
         // ============================================
         
-        // Backend URL - change this when deploying
-        // Local: 'http://localhost:5000'
-        // Railway/Render: Your deployed URL
-        const BACKEND_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:5000' 
-            : window.location.origin;
+        // Backend URL - Railway deployment
+        const BACKEND_URL = 'https://web-production-f5f1e.up.railway.app';
         
         // Supabase config (loaded from backend)
         let supabase = null;
@@ -656,14 +652,18 @@
         
         async function init() {
             console.log('>> Initializing THE BOOK OF TEE...');
+            console.log('>> Backend URL:', BACKEND_URL);
             
             // Initialize voice input
             initVoiceInput();
             
             // Check backend connection
             try {
+                console.log('>> Fetching config from backend...');
                 const response = await fetch(`${BACKEND_URL}/config`);
+                console.log('>> Config response status:', response.status);
                 const config = await response.json();
+                console.log('>> Config received:', config);
                 
                 // Initialize Supabase
                 if (config.supabase_url && config.supabase_key) {
