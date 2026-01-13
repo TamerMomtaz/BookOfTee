@@ -705,6 +705,7 @@
             lyrics: '#ffd700',
             lyric: '#ffd700',
             engineering: '#44aaff',
+            plant: '#44aaff',
             metric: '#44aaff',
             sop: '#44aaff',
             code: '#00ff88',
@@ -866,7 +867,7 @@
                 nodes = nodesData.map(node => ({
                     id: node.id,
                     content: node.content,
-                    type: node.type || 'thought',
+                    type: (node.node_type || 'thought').toLowerCase(),
                     tags: node.tags || [],
                     created_at: node.created_at,
                     // Random initial position
