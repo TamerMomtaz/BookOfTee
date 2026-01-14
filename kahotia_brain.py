@@ -66,7 +66,7 @@ REMEMBER: No thought is wasted. Every idea feeds the Synaptic Graph."""
 # ============================================
 
 app = Flask(__name__)
-CORS(app)  # Allow cross-origin requests
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Initialize Anthropic client
 client = None
