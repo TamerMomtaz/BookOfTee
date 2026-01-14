@@ -918,10 +918,14 @@
         
         // Event delegation for card/list clicks
         document.getElementById('cardsView').addEventListener('click', (e) => {
+            console.log('Card area clicked!', e.target);
             const card = e.target.closest('.thought-card');
+            console.log('Found card:', card);
             if (card) {
                 const id = parseInt(card.dataset.id);
+                console.log('Card ID:', id);
                 const thought = allThoughts.find(t => t.id === id);
+                console.log('Found thought:', thought);
                 if (thought) openModal(thought);
             }
         });
