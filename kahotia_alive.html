@@ -1176,7 +1176,10 @@
         // START
         // ============================================
         
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', async function() {
+    await init();
+    initGallery();
+});
         
         // Handle toll input enter
         document.getElementById('tollInput').addEventListener('keypress', (e) => {
