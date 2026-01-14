@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE DIALOGUE - Conversations with Kahotia</title>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --bg-void: #050508;
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --accent-cyan: #00f0ff;
+            --accent-magenta: #ff00ff;
+            --accent-gold: #ffd700;
+            --text-primary: #e0e0e0;
+            --text-dim: #666;
+            --text-muted: #444;
+            --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.5);
+            --glow-magenta: 0 0 20px rgba(255, 0, 255, 0.5);
+            
+            /* Dialogue colors */
+            --tee-color: #00f0ff;
+            --kahotia-color: #ff00ff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: var(--bg-void);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        /* ============================================
+           HEADER
+           ============================================ */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: linear-gradient(180deg, rgba(10, 10, 15, 0.98) 0%, rgba(10, 10, 15, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .nav-btn {
+            background: transparent;
+            border: 1px solid var(--accent-cyan);
+            border-radius: 5px;
+            padding: 8px 15px;
+            color: var(--accent-cyan);
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(0, 240, 255, 0.1);
+            box-shadow: var(--glow-cyan);
+        }
+        
+        .nav-btn.library-btn {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+        
+        .nav-btn.library-btn:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
+        
+        .title-container h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 3px;
+        }
+        
+        .title-container .subtitle {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            margin-top: 3px;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 25px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        
+        .stat-value.tee {
+            color: var(--tee-color);
+        }
+        
+        .stat-value.kahotia {
+            color: var(--kahotia-color);
+        }
+        
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+        
+        /* ============================================
+           LEGEND
+           ============================================ */
+        .legend {
+            position: fixed;
+            top: 80px;
+            left: 0;
+            right: 0;
+            z-index: 90;
+            background: rgba(10, 10, 15, 0.95);
+            padding: 10px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8rem;
+        }
+        
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .legend-dot.tee {
+            background: var(--tee-color);
+            box-shadow: 0 0 10px var(--tee-color);
+        }
+        
+        .legend-dot.kahotia {
+            background: var(--kahotia-color);
+            box-shadow: 0 0 10px var(--kahotia-color);
+        }
+        
+        /* ============================================
+           MAIN CONTENT
+           ============================================ */
+        .main-container {
+            margin-top: 130px;
+            padding: 30px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* ============================================
+           DATE GROUPS
+           ============================================ */
+        .date-group {
+            margin-bottom: 40px;
+        }
+        
+        .date-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        .date-icon {
+            font-size: 1.2rem;
+        }
+        
+        .date-text {
+            font-size: 1rem;
+            color: var(--accent-gold);
+            letter-spacing: 2px;
+        }
+        
+        .date-count {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+        
+        /* ============================================
+           DIALOGUE ENTRIES
+           ============================================ */
+        .dialogue-entry {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px 20px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            border-left: 4px solid;
+            transition: all 0.2s ease;
+        }
+        
+        .dialogue-entry:hover {
+            background: rgba(18, 18, 26, 0.8);
+            transform: translateX(5px);
+        }
+        
+        .dialogue-entry.tee {
+            border-left-color: var(--tee-color);
+        }
+        
+        .dialogue-entry.kahotia {
+            border-left-color: var(--kahotia-color);
+        }
+        
+        .entry-serial {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            min-width: 50px;
+            padding-top: 3px;
+        }
+        
+        .entry-content {
+            flex: 1;
+        }
+        
+        .entry-speaker {
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .entry-speaker.tee {
+            color: var(--tee-color);
+        }
+        
+        .entry-speaker.kahotia {
+            color: var(--kahotia-color);
+        }
+        
+        .entry-text {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+        }
+        
+        .entry-time {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            min-width: 70px;
+            text-align: right;
+            padding-top: 3px;
+        }
+        
+        /* ============================================
+           LOADING & EMPTY STATES
+           ============================================ */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: var(--accent-cyan);
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid transparent;
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 80px 30px;
+            color: var(--text-dim);
+        }
+        
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-text {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        
+        .empty-hint {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        /* ============================================
+           SCROLL TO TOP
+           ============================================ */
+        .scroll-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .scroll-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .scroll-top:hover {
+            background: rgba(0, 240, 255, 0.1);
+            box-shadow: var(--glow-cyan);
+        }
+        
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 768px) {
+            .header {
+                padding: 10px 15px;
+                flex-wrap: wrap;
+            }
+            
+            .title-container h1 {
+                font-size: 1.1rem;
+            }
+            
+            .legend {
+                top: 70px;
+                padding: 8px 15px;
+                gap: 20px;
+            }
+            
+            .main-container {
+                margin-top: 120px;
+                padding: 15px;
+            }
+            
+            .dialogue-entry {
+                padding: 12px 15px;
+                gap: 10px;
+            }
+            
+            .entry-serial {
+                min-width: 40px;
+                font-size: 0.65rem;
+            }
+            
+            .entry-time {
+                display: none;
+            }
+            
+            .stats {
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <a href="kahotia_alive.html" class="nav-btn">
+                <span>←</span>
+                <span>KAHOTIA</span>
+            </a>
+            <a href="the_library.html" class="nav-btn library-btn">
+                <span>📚</span>
+                <span>LIBRARY</span>
+            </a>
+            <div class="title-container">
+                <h1>THE DIALOGUE</h1>
+                <div class="subtitle">>> CONVERSATIONS ACROSS TIME</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value tee" id="teeCount">0</div>
+                    <div class="stat-label">TEE</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value kahotia" id="kahotiaCount">0</div>
+                    <div class="stat-label">KAHOTIA</div>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- LEGEND -->
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-dot tee"></div>
+            <span>TEE SPEAKS</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot kahotia"></div>
+            <span>KAHOTIA RESPONDS</span>
+        </div>
+    </div>
+    
+    <!-- MAIN CONTENT -->
+    <main class="main-container">
+        <!-- Loading State -->
+        <div class="loading" id="loadingState">
+            <div class="loading-spinner"></div>
+            <div>Loading dialogues...</div>
+        </div>
+        
+        <!-- Dialogue Container -->
+        <div id="dialogueContainer">
+            <!-- Populated by JS -->
+        </div>
+        
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-icon">💬</div>
+            <div class="empty-text">No dialogues yet</div>
+            <div class="empty-hint">Start a conversation with Kahotia to see it here</div>
+        </div>
+    </main>
+    
+    <!-- Scroll to Top -->
+    <button class="scroll-top" id="scrollTop" onclick="scrollToTop()">↑</button>
+    
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        
+        const BACKEND_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000' 
+            : 'https://web-production-f5f1e.up.railway.app';
+        
+        let supabaseClient = null;
+        let allDialogues = [];
+        
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        
+        async function init() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/config`);
+                const config = await response.json();
+                
+                if (config.supabase_url && config.supabase_key) {
+                    supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_key);
+                }
+                
+                await loadDialogues();
+            } catch (error) {
+                console.error('Connection failed:', error);
+                document.getElementById('loadingState').innerHTML = '<div class="empty-icon">⚠️</div><div>Failed to connect</div>';
+            }
+            
+            // Setup scroll listener
+            window.addEventListener('scroll', handleScroll);
+        }
+        
+        // ============================================
+        // DATA LOADING
+        // ============================================
+        
+        async function loadDialogues() {
+            if (!supabaseClient) return;
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('dialogues')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                allDialogues = data || [];
+                
+                document.getElementById('loadingState').style.display = 'none';
+                
+                // Update counts
+                const teeCount = allDialogues.filter(d => d.speaker === 'tee').length;
+                const kahotiaCount = allDialogues.filter(d => d.speaker === 'kahotia').length;
+                document.getElementById('teeCount').textContent = teeCount;
+                document.getElementById('kahotiaCount').textContent = kahotiaCount;
+                
+                if (allDialogues.length === 0) {
+                    document.getElementById('emptyState').style.display = 'block';
+                } else {
+                    renderDialogues();
+                }
+                
+            } catch (error) {
+                console.error('Load failed:', error);
+                // Table might not exist yet - show helpful message
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('emptyState').innerHTML = `
+                    <div class="empty-icon">🔧</div>
+                    <div class="empty-text">Dialogues table not found</div>
+                    <div class="empty-hint">Run the SQL setup in Supabase to create the dialogues table</div>
+                `;
+            }
+        }
+        
+        // ============================================
+        // RENDERING
+        // ============================================
+        
+        function renderDialogues() {
+            const container = document.getElementById('dialogueContainer');
+            container.innerHTML = '';
+            
+            // Group by date
+            const grouped = groupByDate(allDialogues);
+            
+            Object.entries(grouped).forEach(([date, dialogues]) => {
+                const group = document.createElement('div');
+                group.className = 'date-group';
+                
+                // Date header
+                const header = document.createElement('div');
+                header.className = 'date-header';
+                header.innerHTML = `
+                    <span class="date-icon">📅</span>
+                    <span class="date-text">${formatDateHeader(date)}</span>
+                    <span class="date-count">${dialogues.length} exchanges</span>
+                `;
+                group.appendChild(header);
+                
+                // Dialogue entries (newest first within each day)
+                dialogues.forEach(dialogue => {
+                    const entry = createDialogueEntry(dialogue);
+                    group.appendChild(entry);
+                });
+                
+                container.appendChild(group);
+            });
+        }
+        
+        function createDialogueEntry(dialogue) {
+            const entry = document.createElement('div');
+            entry.className = `dialogue-entry ${dialogue.speaker}`;
+            
+            const time = new Date(dialogue.created_at).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const speakerName = dialogue.speaker === 'tee' ? 'TEE' : 'KAHOTIA';
+            
+            entry.innerHTML = `
+                <div class="entry-serial">#${dialogue.serial_number || '—'}</div>
+                <div class="entry-content">
+                    <div class="entry-speaker ${dialogue.speaker}">${speakerName}</div>
+                    <div class="entry-text">${escapeHtml(dialogue.content)}</div>
+                </div>
+                <div class="entry-time">${time}</div>
+            `;
+            
+            return entry;
+        }
+        
+        // ============================================
+        // UTILITIES
+        // ============================================
+        
+        function groupByDate(dialogues) {
+            const groups = {};
+            
+            dialogues.forEach(d => {
+                const date = new Date(d.created_at).toISOString().split('T')[0];
+                if (!groups[date]) {
+                    groups[date] = [];
+                }
+                groups[date].push(d);
+            });
+            
+            return groups;
+        }
+        
+        function formatDateHeader(dateStr) {
+            const date = new Date(dateStr);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            if (dateStr === today.toISOString().split('T')[0]) {
+                return 'TODAY';
+            } else if (dateStr === yesterday.toISOString().split('T')[0]) {
+                return 'YESTERDAY';
+            } else {
+                return date.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                }).toUpperCase();
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function handleScroll() {
+            const scrollBtn = document.getElementById('scrollTop');
+            if (window.scrollY > 300) {
+                scrollBtn.classList.add('visible');
+            } else {
+                scrollBtn.classList.remove('visible');
+            }
+        }
+        
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // ============================================
+        // START
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
