@@ -550,6 +550,114 @@
         .toast.error { background: rgba(255,0,0,0.2); border: 1px solid #ff4444; color: #ff4444; }
         @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } }
         @keyframes toastOut { to { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
+    /* ============================================
+   ART GALLERY & LIGHTBOX
+   ============================================ */
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.gallery-item {
+    aspect-ratio: 1;
+    border-radius: 5px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid #2a2a3a;
+    transition: all 0.3s ease;
+}
+
+.gallery-item:hover {
+    border-color: var(--accent-magenta);
+    box-shadow: var(--glow-magenta);
+    transform: scale(1.02);
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.lightbox-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.lightbox-overlay.active {
+    display: flex;
+}
+
+.lightbox-content {
+    display: flex;
+    gap: 2rem;
+    max-width: 90vw;
+    max-height: 90vh;
+    align-items: center;
+}
+
+.lightbox-content img {
+    max-width: 60vw;
+    max-height: 85vh;
+    object-fit: contain;
+    border: 2px solid var(--accent-cyan);
+    border-radius: 8px;
+}
+
+.lightbox-info {
+    max-width: 350px;
+    color: var(--text-primary);
+}
+
+.lightbox-title {
+    color: var(--accent-cyan);
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.lightbox-desc {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    font-size: 2.5rem;
+    color: var(--text-dim);
+    cursor: pointer;
+}
+
+.lightbox-close:hover { color: var(--accent-cyan); }
+
+.lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 3rem;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 1rem;
+}
+
+.lightbox-nav:hover { color: var(--accent-cyan); }
+.lightbox-nav.prev { left: 20px; }
+.lightbox-nav.next { right: 20px; }
+
+@media (max-width: 900px) {
+    .lightbox-content { flex-direction: column; }
+    .lightbox-content img { max-width: 90vw; max-height: 50vh; }
+}
     </style>
 </head>
 <body>
@@ -622,16 +730,27 @@
             </div>
         </div>
         
-        <!-- RIGHT: THE GALLERY -->
-        <div class="panel">
-            <div class="panel-title">🎨 THE GALLERY</div>
-            <div class="gallery-grid">
-                <div class="gallery-item">[CONCEPT_01]</div>
-                <div class="gallery-item">[LYRIC_02]</div>
-                <div class="gallery-item">[SKETCH_03]</div>
-                <div class="gallery-item">[METRIC_04]</div>
-            </div>
+       <!-- RIGHT: THE GALLERY -->
+<div class="panel">
+    <div class="panel-title">🎨 THE GALLERY <span style="float:right;font-size:0.7rem;color:var(--text-dim);">18 Works</span></div>
+    <div class="gallery-grid" id="artGallery">
+        <!-- Populated by JS -->
+    </div>
+</div>
+
+<!-- LIGHTBOX MODAL -->
+<div class="lightbox-overlay" id="lightbox">
+    <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+    <span class="lightbox-nav prev" onclick="navLightbox(-1)">&#8249;</span>
+    <span class="lightbox-nav next" onclick="navLightbox(1)">&#8250;</span>
+    <div class="lightbox-content">
+        <img id="lightboxImg" src="" alt="">
+        <div class="lightbox-info">
+            <div class="lightbox-title" id="lightboxTitle"></div>
+            <div class="lightbox-desc" id="lightboxDesc"></div>
         </div>
+    </div>
+</div>
         
         <!-- BOTTOM: CHAT -->
         <div class="panel chat-section">
@@ -1063,6 +1182,103 @@
         document.getElementById('tollInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') payToll();
         });
+   // ============================================
+// ART GALLERY
+// ============================================
+
+const artworks = [
+    { file: "art_01_halfface_peacock.jpg", desc: "Half-face emerging from chaos. Blue skin, orange void. One eye watching back. Peacock feather eyes above." },
+    { file: "art_02_great_wave_fire.jpg", desc: "A great wave frozen mid-crash. Fire burns in the black void beneath." },
+    { file: "art_03_golden_family.jpg", desc: "Golden stream pours into a circle containing family. Gold is what connects." },
+    { file: "art_04_puzzle_wave.jpg", desc: "Wave built from puzzle pieces. Parts can only see parts." },
+    { file: "art_05_ammonites.jpg", desc: "Ammonites. The spiral as the shape of time that isn't linear." },
+    { file: "art_06_dark_flower_klimt.jpg", desc: "Dark flower in a Klimt-kissed universe of golden circles." },
+    { file: "art_07_ankh_eye_faces.jpg", desc: "The Eye of eternal life. Ankh inside eye inside sun. Faces cascade below." },
+    { file: "art_08_golden_chaos_signature.jpg", desc: "Golden chaos containing 'Tee' in a cartouche. Self-portrait as field." },
+    { file: "art_09_black_goddess_zentangle.jpg", desc: "The void as presence. Goddess descends through infinite pattern. Eye at center." },
+    { file: "art_10_white_breath.jpg", desc: "White fire blooming from darkness. Breath made visible." },
+    { file: "art_11_fullhouse_butterfly.jpg", desc: "The Full House. Butterfly emerges. Two eyes watch from beneath. Only MORE." },
+    { file: "art_12_frequency_waves.jpg", desc: "Frequency. Three sine waves dance. Ankhs scattered like notes. Music visible." },
+    { file: "art_13_face_frequency.jpg", desc: "Face made of frequency. Profile dissolved into waveform." },
+    { file: "art_14_silhouette_kiss.jpg", desc: "Love in negative space. Two silhouettes. Black where love lives." },
+    { file: "art_15_goddess_nuts_bolts.jpg", desc: "Goddess of Nuts and Bolts. Divine Feminine in industrial hardware." },
+    { file: "art_16_meadow_chaos.jpg", desc: "Meadow at chaos edge. Storm above, flowers bloom below." },
+    { file: "art_17_hamsa_hand.jpg", desc: "The Hand that holds everything. Five fingers, five eyes watching." },
+    { file: "art_18_big_bang_pattern.jpg", desc: "Big Bang of pattern. Maximalism as manifesto. Only MORE." }
+];
+
+const ART_BASE = "https://raw.githubusercontent.com/TamerMomtaz/BookOfTee/main/images/art/";
+let currentArt = 0;
+
+function initGallery() {
+    const grid = document.getElementById('artGallery');
+    if (!grid) return;
+    
+    artworks.forEach((art, i) => {
+        const item = document.createElement('div');
+        item.className = 'gallery-item';
+        item.onclick = () => openLightbox(i);
+        
+        const img = document.createElement('img');
+        img.src = ART_BASE + art.file;
+        img.alt = `Art ${i+1}`;
+        img.onerror = () => { item.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:0.7rem;">#${i+1}</div>`; };
+        
+        item.appendChild(img);
+        grid.appendChild(item);
+    });
+}
+
+function openLightbox(i) {
+    currentArt = i;
+    updateLightbox();
+    document.getElementById('lightbox').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function navLightbox(dir) {
+    currentArt = (currentArt + dir + artworks.length) % artworks.length;
+    updateLightbox();
+}
+
+function updateLightbox() {
+    const art = artworks[currentArt];
+    document.getElementById('lightboxImg').src = ART_BASE + art.file;
+    document.getElementById('lightboxTitle').textContent = `TeerAIned sees #${String(currentArt+1).padStart(2,'0')}`;
+    document.getElementById('lightboxDesc').textContent = art.desc + " Maybe I'm right, maybe I'm wrong—but this is what your TeerAIned sees.";
+}
+
+document.addEventListener('keydown', (e) => {
+    if (!document.getElementById('lightbox').classList.contains('active')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') navLightbox(-1);
+    if (e.key === 'ArrowRight') navLightbox(1);
+});
+
+// Add to init
+const originalInit = init;
+init = async function() {
+    await originalInit();
+    initGallery();
+};
+```
+
+---
+
+## **ALSO: Upload the images folder**
+
+Create this folder structure in your GitHub repo:
+```
+images/
+└── art/
+    ├── art_01_halfface_peacock.jpg
+    ├── art_02_great_wave_fire.jpg
+    ... (all 18 files)
     </script>
 </body>
 </html>
