@@ -911,15 +911,29 @@
                 });
             });
             
-            // Modal close on overlay click
-            document.getElementById('modalOverlay').addEventListener('click', (e) => {
-                if (e.target.id === 'modalOverlay') closeModal();
-            });
-            
-            // Escape to close modal
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') closeModal();
-            });
+           // Modal close on overlay click
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modalOverlay') closeModal();
+        });
+        
+        // Event delegation for card/list clicks
+        document.getElementById('cardsView').addEventListener('click', (e) => {
+            const card = e.target.closest('.thought-card');
+            if (card) {
+                const id = parseInt(card.dataset.id);
+                const thought = allThoughts.find(t => t.id === id);
+                if (thought) openModal(thought);
+            }
+        });
+        
+        document.getElementById('listView').addEventListener('click', (e) => {
+            const item = e.target.closest('.list-item');
+            if (item) {
+                const id = parseInt(item.dataset.id);
+                const thought = allThoughts.find(t => t.id === id);
+                if (thought) openModal(thought);
+            }
+        });
         }
         
         // ============================================
@@ -1103,13 +1117,6 @@
             // Render list
             listView.innerHTML = filteredThoughts.map(t => createListItem(t)).join('');
             
-            // Add click handlers
-            document.querySelectorAll('.thought-card, .list-item').forEach(el => {
-                el.addEventListener('click', () => {
-                    const id = parseInt(el.dataset.id);
-                    openModal(filteredThoughts.find(t => t.id === id));
-                });
-            });
         }
         
         function createCard(thought) {
