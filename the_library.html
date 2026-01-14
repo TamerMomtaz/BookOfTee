@@ -918,14 +918,10 @@
         
         // Event delegation for card/list clicks
         document.getElementById('cardsView').addEventListener('click', (e) => {
-            console.log('Card area clicked!', e.target);
             const card = e.target.closest('.thought-card');
-            console.log('Found card:', card);
             if (card) {
-                const id = parseInt(card.dataset.id);
-                console.log('Card ID:', id);
+                const id = card.dataset.id;  // Keep as string, don't parseInt!
                 const thought = allThoughts.find(t => t.id === id);
-                console.log('Found thought:', thought);
                 if (thought) openModal(thought);
             }
         });
@@ -933,13 +929,11 @@
         document.getElementById('listView').addEventListener('click', (e) => {
             const item = e.target.closest('.list-item');
             if (item) {
-                const id = parseInt(item.dataset.id);
+                const id = item.dataset.id;  // Keep as string, don't parseInt!
                 const thought = allThoughts.find(t => t.id === id);
                 if (thought) openModal(thought);
             }
         });
-        }
-        
         // ============================================
         // DATA LOADING
         // ============================================
