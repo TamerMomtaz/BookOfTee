@@ -509,7 +509,7 @@
         </div>
         <nav class="nav-links">
             <a href="kahotia_alive.html" class="nav-link">CHAT</a>
-            <a href="konscious_ionganicised.html" class="nav-link">2D GRAPH</a>
+            <a href="konscious_ionganicised.html" class="nav-link">KONSCIOUS</a>
             <a href="the_library.html" class="nav-link">LIBRARY</a>
         </nav>
     </header>
@@ -768,7 +768,7 @@
             });
             
             // Fabric body (left half sphere)
-            const fabricBodyGeometry = new THREE.SphereGeometry(15, 32, 32, 0, Math.PI);
+            const fabricBodyGeometry = new THREE.SphereGeometry(25, 32, 32, 0, Math.PI);
             const fabricBody = new THREE.Mesh(fabricBodyGeometry, fabricMaterial);
             fabricBody.rotation.y = -Math.PI / 2;
             kahotiaGroup.add(fabricBody);
@@ -822,7 +822,7 @@
             });
             
             // Cosmic body (right half sphere)
-            const cosmicBodyGeometry = new THREE.SphereGeometry(15, 32, 32, Math.PI, Math.PI);
+            const cosmicBodyGeometry = new THREE.SphereGeometry(25, 32, 32, Math.PI, Math.PI);
             const cosmicBody = new THREE.Mesh(cosmicBodyGeometry, cosmicMaterial);
             cosmicBody.rotation.y = -Math.PI / 2;
             kahotiaGroup.add(cosmicBody);
