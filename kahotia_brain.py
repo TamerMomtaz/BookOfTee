@@ -1,14 +1,15 @@
 """
 KAHOTIA BRAIN - The Thought Police Backend
-THE BOOK OF TEE - Phase 4.5 (With ElevenLabs Voice!)
+THE BOOK OF TEE - Phase 5 (Voice Chunking Fix!)
 
 This connects Kahotia to Claude AI, Supabase, and ElevenLabs.
-Works locally AND when deployed to Railway/Render.
+Fixed: Voice now chunks long responses to prevent cutoff.
 """
 
 import os
 import requests
 import base64
+import re
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from anthropic import Anthropic
@@ -27,6 +28,8 @@ SUPABASE_KEY = os.environ.get('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXV
 # ElevenLabs Configuration
 ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY', 'YOUR_ELEVENLABS_KEY_HERE')
 ELEVENLABS_VOICE_ID = os.environ.get('ELEVENLABS_VOICE_ID', 'kdTL3m6g66WPgShUxxFI')
+# Chunk settings
+MAX_CHUNK_SIZE = 800  # Characters per chunk (safe limit for ElevenLabs)
 
 # Get port from environment (Railway/Render set this) or default to 5000
 PORT = int(os.environ.get('PORT', 5000))
@@ -71,20 +74,64 @@ if CLAUDE_API_KEY and CLAUDE_API_KEY != 'YOUR_CLAUDE_API_KEY_HERE':
     client = Anthropic(api_key=CLAUDE_API_KEY)
 
 # ============================================
-# ELEVENLABS VOICE SYNTHESIS
+# TEXT CHUNKING FOR VOICE
 # ============================================
 
-def generate_speech(text):
-    """Generate speech audio using ElevenLabs API"""
+def clean_text_for_speech(text):
+    """Clean text for speech synthesis"""
+    clean = text.replace('>>', '').replace('<<', '')
+    clean = re.sub(r'\*\*(.+?)\*\*', r'\1', clean)  # Remove **bold**
+    clean = re.sub(r'\*(.+?)\*', r'\1', clean)      # Remove *italic*
+    clean = re.sub(r'`(.+?)`', r'\1', clean)        # Remove `code`
+    clean = re.sub(r'\[(.+?)\]\(.+?\)', r'\1', clean)  # Remove [links](url)
+    clean = re.sub(r'\n{3,}', '\n\n', clean)        # Reduce multiple newlines
+    return clean.strip()
+
+def chunk_text(text, max_size=MAX_CHUNK_SIZE):
+    """Split text into chunks at sentence boundaries."""
+    clean = clean_text_for_speech(text)
+    
+    if len(clean) <= max_size:
+        return [clean]
+    
+    sentences = re.split(r'(?<=[.!?])\s+', clean)
+    chunks = []
+    current_chunk = ""
+    
+    for sentence in sentences:
+        if len(sentence) > max_size:
+            sub_parts = re.split(r'(?<=[,;:])\s+', sentence)
+            for part in sub_parts:
+                if len(current_chunk) + len(part) + 1 <= max_size:
+                    current_chunk += (" " + part if current_chunk else part)
+                else:
+                    if current_chunk:
+                        chunks.append(current_chunk.strip())
+                    if len(part) > max_size:
+                        for i in range(0, len(part), max_size):
+                            chunks.append(part[i:i+max_size])
+                        current_chunk = ""
+                    else:
+                        current_chunk = part
+        elif len(current_chunk) + len(sentence) + 1 <= max_size:
+            current_chunk += (" " + sentence if current_chunk else sentence)
+        else:
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+            current_chunk = sentence
+    
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+    
+    return chunks
+
+def generate_speech_chunk(text):
+    """Generate speech audio for a single chunk"""
     if not ELEVENLABS_API_KEY or ELEVENLABS_API_KEY == 'YOUR_ELEVENLABS_KEY_HERE':
         return None
     
-    # Clean the text for speech
-    clean_text = text.replace('>>', '').replace('**', '').replace('*', '').replace('<<', '').strip()
-    
-    # Limit text length for API
-    if len(clean_text) > 1000:
-        clean_text = clean_text[:1000] + '...'
+    if not text or len(text.strip()) < 2:
+        return None
     
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}"
     
@@ -95,7 +142,7 @@ def generate_speech(text):
     }
     
     data = {
-        "text": clean_text,
+        "text": text,
         "model_id": "eleven_monolingual_v1",
         "voice_settings": {
             "stability": 0.5,
@@ -108,7 +155,6 @@ def generate_speech(text):
     try:
         response = requests.post(url, json=data, headers=headers)
         if response.status_code == 200:
-            # Return base64 encoded audio
             return base64.b64encode(response.content).decode('utf-8')
         else:
             print(f">> ElevenLabs error: {response.status_code} - {response.text}")
@@ -117,6 +163,18 @@ def generate_speech(text):
         print(f">> ElevenLabs exception: {str(e)}")
         return None
 
+def generate_speech(text):
+    """Generate speech audio with chunking support."""
+    chunks = chunk_text(text)
+    audio_chunks = []
+    
+    for i, chunk in enumerate(chunks):
+        print(f">> Generating audio chunk {i+1}/{len(chunks)} ({len(chunk)} chars)")
+        audio = generate_speech_chunk(chunk)
+        if audio:
+            audio_chunks.append(audio)
+    
+    return audio_chunks if audio_chunks else None
 # ============================================
 # ROUTES
 # ============================================
@@ -182,16 +240,17 @@ def chat():
         
         kahotia_response = response.content[0].text
         
-        # Generate audio if requested
-        audio_data = None
+        # Generate audio chunks if requested
+        audio_chunks = None
         if include_audio:
-            audio_data = generate_speech(kahotia_response)
+            audio_chunks = generate_speech(kahotia_response)
         
         return jsonify({
             "response": kahotia_response,
             "success": True,
             "mode": "online",
-            "audio": audio_data,
+            "audio_chunks": audio_chunks,
+            "chunk_count": len(audio_chunks) if audio_chunks else 0,
             "timestamp": datetime.now().isoformat()
         })
         
@@ -204,7 +263,7 @@ def chat():
 
 @app.route('/speak', methods=['POST'])
 def speak():
-    """Generate speech for any text"""
+    """Generate speech for any text (with chunking)"""
     try:
         data = request.json
         text = data.get('text', '')
@@ -212,11 +271,12 @@ def speak():
         if not text:
             return jsonify({"error": "No text provided", "success": False}), 400
         
-        audio_data = generate_speech(text)
+        audio_chunks = generate_speech(text)
         
-        if audio_data:
+        if audio_chunks:
             return jsonify({
-                "audio": audio_data,
+                "audio_chunks": audio_chunks,
+                "chunk_count": len(audio_chunks),
                 "success": True
             })
         else:
@@ -230,7 +290,6 @@ def speak():
             "error": str(e),
             "success": False
         }), 500
-
 
 @app.route('/tag', methods=['POST'])
 def tag_thought():
@@ -319,7 +378,7 @@ def get_config():
         "supabase_key": SUPABASE_KEY,
         "backend_status": "online" if client else "offline",
         "voice_enabled": ELEVENLABS_API_KEY and ELEVENLABS_API_KEY != 'YOUR_ELEVENLABS_KEY_HERE',
-        "version": "4.5.0"
+        "version": "5.0.0"
     })
 
 
@@ -330,13 +389,13 @@ def get_config():
 if __name__ == '__main__':
     print("\n" + "="*50)
     print("   KAHOTIA BRAIN - THE THOUGHT POLICE")
-    print("   THE BOOK OF TEE - Phase 4.5")
+    print("   THE BOOK OF TEE - Phase 5 (Chunked Voice)")
     print("="*50)
     print(f"\n>> Server starting on port {PORT}")
-    print(f">> Claude API: {'Connected' if client else 'OFFLINE - Set CLAUDE_API_KEY'}")
-    print(f">> ElevenLabs: {'Connected' if ELEVENLABS_API_KEY and ELEVENLABS_API_KEY != 'YOUR_ELEVENLABS_KEY_HERE' else 'OFFLINE - Set ELEVENLABS_API_KEY'}")
-    print(f">> Supabase URL: {SUPABASE_URL[:40]}...")
-    print("\n>> Kahotia is watching. No thought is wasted.\n")
-    
+    print(f">> Claude API: {'Connected' if client else 'OFFLINE'}")
+    print(f">> ElevenLabs: {'Connected' if ELEVENLABS_API_KEY and ELEVENLABS_API_KEY != 'YOUR_ELEVENLABS_KEY_HERE' else 'OFFLINE'}")
+    print(f">> Voice chunking: Enabled (max {MAX_CHUNK_SIZE} chars/chunk)")
+    print(f">> Supabase: {SUPABASE_URL[:40]}...")
+    print("\n>> Kahotia is watching. No thought is wasted.\n")    
     # Run the server
     app.run(host='0.0.0.0', port=PORT, debug=False)
