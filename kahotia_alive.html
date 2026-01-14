@@ -106,7 +106,8 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.8; }
         }
-        
+        <a href="the_dialogue.html" class="nav-btn">💬 DIALOGUE</a>
+        }
         /* ============================================
            MAIN LAYOUT
            ============================================ */
@@ -886,6 +887,33 @@
         }
         
         // ============================================
+        // DIALOGUE SAVE FUNCTION
+        // ============================================
+        
+        async function saveDialogue(content, speaker) {
+            if (!supabase) return null;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('dialogues')
+                    .insert({
+                        content: content,
+                        speaker: speaker,
+                        created_at: new Date().toISOString()
+                    })
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                console.log(`>> Dialogue saved: ${speaker}`);
+                return data;
+            } catch (error) {
+                console.error('>> Error saving dialogue:', error);
+                return null;
+            }
+        }
+        
+        // ============================================
         // CHAT FUNCTIONS
         // ============================================
         
@@ -898,8 +926,11 @@
             // Clear input
             input.value = '';
             
-            // Add user message to chat
+           // Add user message to chat
             addChatMessage(message, 'user');
+            
+            // Save to dialogues
+            await saveDialogue(message, 'tee');
             
             // Add to history
             conversationHistory.push({ role: 'user', content: message });
@@ -932,7 +963,10 @@
                     if (data.audio) playKahotiaVoice(data.audio);
                     conversationHistory.push({ role: 'assistant', content: data.response });
                     
-                    // Auto-tag and save the message
+                   // Save Kahotia's response to dialogues
+                    await saveDialogue(data.response, 'kahotia');
+                   
+                   // Auto-tag and save the message
                     await tagMessage(message);
                 } else {
                     addChatMessage(`>> ERROR: ${data.error || 'Unknown error'}`, 'system');
