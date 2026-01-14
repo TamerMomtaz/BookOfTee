@@ -105,8 +105,7 @@
         @keyframes titlePulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.8; }
-        }
-        <a href="the_dialogue.html" class="nav-btn">💬 DIALOGUE</a>
+        
         }
         /* ============================================
            MAIN LAYOUT
@@ -691,6 +690,10 @@
                 <span>🌌</span>
                 <span>KONSCIOUS</span>
             </a>
+            <a href="the_dialogue.html" class="nav-link" style="position:static;transform:none;">
+                <span>💬</span>
+                <span>DIALOGUE</span>
+            </a>
         </div>
     </header>
     
@@ -891,10 +894,10 @@
         // ============================================
         
         async function saveDialogue(content, speaker) {
-            if (!supabase) return null;
+            if (!supabaseClient) return null;
             
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('dialogues')
                     .insert({
                         content: content,
