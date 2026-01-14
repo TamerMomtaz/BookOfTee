@@ -1,1 +1,1 @@
-web: gunicorn kahotia_brain:app --bind 0.0.0.0:$PORT
+web: gunicorn kahotia_brain:app --timeout 120 --workers 1
