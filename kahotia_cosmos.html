@@ -572,9 +572,8 @@
         // ============================================
         
         const BACKEND_URL = 'https://web-production-f5f1e.up.railway.app';
-        const SUPABASE_URL = 'https://pjaxznbcanpbsejrpljy.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqYXh6bmJjYW5wYnNlanJwbGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYxMTgwMzAsImV4cCI6MjA1MTY5NDAzMH0.aI5loNEE8BzGhRW1t1T9EvX1A_7Ndvdg3W0bKSjpaGI';
-        
+        let SUPABASE_URL = '';
+        let SUPABASE_KEY = '';
         // Color mapping
         const TYPE_COLORS = {
             'Philosophy': 0x9b59b6,
@@ -757,7 +756,7 @@
         // KAHOTIA - THE COSMIC MASCOT
         // ============================================
         
-        function createKahotia() {
+       function createKahotia() {
             kahotiaGroup = new THREE.Group();
             
             // === LEFT HALF: FABRIC DOLL (Structured/ISO) ===
@@ -767,49 +766,19 @@
                 shininess: 10
             });
             
-            // Fabric body (left half sphere)
+            // Fabric body (left half)
             const fabricBodyGeometry = new THREE.SphereGeometry(25, 32, 32, 0, Math.PI);
             const fabricBody = new THREE.Mesh(fabricBodyGeometry, fabricMaterial);
             fabricBody.rotation.y = -Math.PI / 2;
             kahotiaGroup.add(fabricBody);
             
-            // Stitching lines on fabric side
-            const stitchMaterial = new THREE.LineBasicMaterial({ color: 0x8b5a2b });
-            for (let i = 0; i < 5; i++) {
-                const stitchGeometry = new THREE.BufferGeometry();
-                const stitchPoints = [];
-                const angle = (i / 5) * Math.PI - Math.PI / 2;
-                for (let j = 0; j <= 20; j++) {
-                    const t = (j / 20) * Math.PI - Math.PI / 2;
-                    stitchPoints.push(new THREE.Vector3(
-                        Math.sin(angle) * Math.cos(t) * 15.5,
-                        Math.sin(t) * 15.5,
-                        Math.cos(angle) * Math.cos(t) * 15.5
-                    ));
-                }
-                stitchGeometry.setFromPoints(stitchPoints);
-                const stitch = new THREE.Line(stitchGeometry, stitchMaterial);
-                if (Math.cos(angle) < 0) kahotiaGroup.add(stitch);
-            }
-            
             // Button eye on fabric side
-            const buttonGeometry = new THREE.CylinderGeometry(2, 2, 0.5, 16);
+            const buttonGeometry = new THREE.CylinderGeometry(4, 4, 2, 16);
             const buttonMaterial = new THREE.MeshPhongMaterial({ color: 0x1a1a1a });
             const button = new THREE.Mesh(buttonGeometry, buttonMaterial);
-            button.position.set(-8, 5, 10);
+            button.position.set(-12, 8, 18);
             button.rotation.x = Math.PI / 2;
             kahotiaGroup.add(button);
-            
-            // Button holes
-            const holeMaterial = new THREE.MeshBasicMaterial({ color: 0xd4a574 });
-            const holeGeometry = new THREE.CircleGeometry(0.4, 8);
-            [-0.5, 0.5].forEach(x => {
-                [-0.5, 0.5].forEach(y => {
-                    const hole = new THREE.Mesh(holeGeometry, holeMaterial);
-                    hole.position.set(-8 + x, 5 + y, 10.3);
-                    kahotiaGroup.add(hole);
-                });
-            });
             
             // === RIGHT HALF: COSMIC MUSCLE (Creative/Raw Power) ===
             const cosmicMaterial = new THREE.MeshPhongMaterial({
@@ -821,25 +790,25 @@
                 opacity: 0.9
             });
             
-            // Cosmic body (right half sphere)
+            // Cosmic body (right half)
             const cosmicBodyGeometry = new THREE.SphereGeometry(25, 32, 32, Math.PI, Math.PI);
             const cosmicBody = new THREE.Mesh(cosmicBodyGeometry, cosmicMaterial);
             cosmicBody.rotation.y = -Math.PI / 2;
             kahotiaGroup.add(cosmicBody);
             
             // Glowing eye on cosmic side
-            const eyeGeometry = new THREE.SphereGeometry(2.5, 16, 16);
+            const eyeGeometry = new THREE.SphereGeometry(5, 16, 16);
             const eyeMaterial = new THREE.MeshBasicMaterial({ 
                 color: 0x00f0ff,
                 transparent: true,
                 opacity: 0.9
             });
             const cosmicEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-            cosmicEye.position.set(8, 5, 10);
+            cosmicEye.position.set(12, 8, 18);
             kahotiaGroup.add(cosmicEye);
             
             // Eye glow
-            const eyeGlowGeometry = new THREE.SphereGeometry(3.5, 16, 16);
+            const eyeGlowGeometry = new THREE.SphereGeometry(8, 16, 16);
             const eyeGlowMaterial = new THREE.MeshBasicMaterial({ 
                 color: 0x00f0ff,
                 transparent: true,
@@ -849,38 +818,7 @@
             eyeGlow.position.copy(cosmicEye.position);
             kahotiaGroup.add(eyeGlow);
             
-            // Energy veins on cosmic side
-            const veinMaterial = new THREE.LineBasicMaterial({ 
-                color: 0x00f0ff,
-                transparent: true,
-                opacity: 0.6
-            });
-            for (let i = 0; i < 8; i++) {
-                const veinGeometry = new THREE.BufferGeometry();
-                const veinPoints = [];
-                const startAngle = Math.random() * Math.PI;
-                const startPhi = Math.random() * Math.PI * 0.8 - Math.PI * 0.4;
-                
-                let currentAngle = startAngle;
-                let currentPhi = startPhi;
-                
-                for (let j = 0; j < 15; j++) {
-                    const r = 15.2;
-                    veinPoints.push(new THREE.Vector3(
-                        r * Math.sin(currentAngle) * Math.cos(currentPhi),
-                        r * Math.sin(currentPhi),
-                        r * Math.cos(currentAngle) * Math.cos(currentPhi)
-                    ));
-                    currentAngle += (Math.random() - 0.3) * 0.2;
-                    currentPhi += (Math.random() - 0.5) * 0.15;
-                }
-                
-                veinGeometry.setFromPoints(veinPoints);
-                const vein = new THREE.Line(veinGeometry, veinMaterial);
-                if (veinPoints[0].z > 0) kahotiaGroup.add(vein);
-            }
-            
-            // Center seam (where two halves meet)
+            // Center seam (magenta line where halves meet)
             const seamMaterial = new THREE.LineBasicMaterial({ 
                 color: 0xff00ff,
                 transparent: true,
@@ -890,14 +828,14 @@
             const seamPoints = [];
             for (let i = 0; i <= 32; i++) {
                 const t = (i / 32) * Math.PI * 2;
-                seamPoints.push(new THREE.Vector3(0, Math.sin(t) * 15, Math.cos(t) * 15));
+                seamPoints.push(new THREE.Vector3(0, Math.sin(t) * 25, Math.cos(t) * 25));
             }
             seamGeometry.setFromPoints(seamPoints);
             const seam = new THREE.Line(seamGeometry, seamMaterial);
             kahotiaGroup.add(seam);
             
             // Aura around Kahotia
-            const auraGeometry = new THREE.SphereGeometry(25, 32, 32);
+            const auraGeometry = new THREE.SphereGeometry(40, 32, 32);
             const auraMaterial = new THREE.MeshBasicMaterial({
                 color: 0xff00ff,
                 transparent: true,
@@ -907,7 +845,7 @@
             const aura = new THREE.Mesh(auraGeometry, auraMaterial);
             kahotiaGroup.add(aura);
             
-            // Store reference for animation
+            // Store references for animation
             kahotia = kahotiaGroup;
             kahotia.userData = {
                 eyeGlow: eyeGlow,
@@ -922,9 +860,18 @@
         // LOAD NODES FROM SUPABASE
         // ============================================
         
-        async function loadNodesFromSupabase() {
+       async function loadNodesFromSupabase() {
             try {
-                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                // First get credentials from backend
+                const configResponse = await fetch(`${BACKEND_URL}/config`);
+                const config = await configResponse.json();
+                
+                if (!config.supabase_url || !config.supabase_key) {
+                    throw new Error('Missing Supabase credentials from backend');
+                }
+                
+                supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_key);
+                console.log('>> Supabase connected via backend config');
                 
                 const { data: nodes, error } = await supabaseClient
                     .from('nodes')
