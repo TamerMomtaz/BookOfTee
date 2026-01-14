@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE LIBRARY - Organized Thoughts</title>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --bg-void: #050508;
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a24;
+            --accent-cyan: #00f0ff;
+            --accent-magenta: #ff00ff;
+            --accent-gold: #ffd700;
+            --text-primary: #e0e0e0;
+            --text-dim: #666;
+            --text-muted: #444;
+            --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.5);
+            --glow-magenta: 0 0 20px rgba(255, 0, 255, 0.5);
+            
+            /* Node type colors */
+            --node-philosophy: #9966ff;
+            --node-lyrics: #ffd700;
+            --node-engineering: #44aaff;
+            --node-code: #00ff88;
+            --node-thought: #ff66aa;
+            --node-art: #ff8844;
+            --node-toll: #ff00ff;
+            --node-bio: #00ddaa;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: var(--bg-void);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        /* ============================================
+           HEADER
+           ============================================ */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: linear-gradient(180deg, rgba(10, 10, 15, 0.98) 0%, rgba(10, 10, 15, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .nav-btn {
+            background: transparent;
+            border: 1px solid var(--accent-cyan);
+            border-radius: 5px;
+            padding: 8px 15px;
+            color: var(--accent-cyan);
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(0, 240, 255, 0.1);
+            box-shadow: var(--glow-cyan);
+        }
+        
+        .nav-btn.graph-btn {
+            border-color: var(--accent-magenta);
+            color: var(--accent-magenta);
+        }
+        
+        .nav-btn.graph-btn:hover {
+            background: rgba(255, 0, 255, 0.1);
+            box-shadow: var(--glow-magenta);
+        }
+        
+        .title-container h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(90deg, var(--accent-gold), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 3px;
+        }
+        
+        .title-container .subtitle {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            margin-top: 3px;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.2rem;
+            color: var(--accent-cyan);
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+        
+        /* ============================================
+           SEARCH BAR
+           ============================================ */
+        .search-container {
+            position: fixed;
+            top: 75px;
+            left: 0;
+            right: 0;
+            z-index: 90;
+            background: rgba(10, 10, 15, 0.95);
+            padding: 15px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .search-input {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 20px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+        }
+        
+        .search-input::placeholder {
+            color: var(--text-dim);
+        }
+        
+        /* ============================================
+           MAIN LAYOUT
+           ============================================ */
+        .main-container {
+            display: flex;
+            margin-top: 140px;
+            min-height: calc(100vh - 140px);
+        }
+        
+        /* ============================================
+           SIDEBAR - Categories
+           ============================================ */
+        .sidebar {
+            width: 250px;
+            background: var(--bg-dark);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px 0;
+            position: fixed;
+            top: 140px;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+        }
+        
+        .sidebar-title {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            padding: 0 20px;
+            margin-bottom: 15px;
+        }
+        
+        .category-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .category-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .category-item.active {
+            background: rgba(0, 240, 255, 0.05);
+            border-left-color: var(--accent-cyan);
+        }
+        
+        .category-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .category-name {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+        
+        .category-count {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        
+        .sidebar-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.05);
+            margin: 20px 0;
+        }
+        
+        .sidebar-section-title {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            padding: 0 20px;
+            margin-bottom: 10px;
+        }
+        
+        .tag-cloud {
+            padding: 0 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .tag-item {
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .tag-item:hover {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: var(--accent-cyan);
+        }
+        
+        .tag-item.active {
+            background: rgba(255, 0, 255, 0.1);
+            border-color: var(--accent-magenta);
+            color: var(--accent-magenta);
+        }
+        
+        /* ============================================
+           CONTENT AREA
+           ============================================ */
+        .content-area {
+            flex: 1;
+            margin-left: 250px;
+            padding: 25px 30px;
+            max-width: calc(100% - 250px);
+        }
+        
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .content-title {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+        }
+        
+        .content-title span {
+            color: var(--accent-cyan);
+        }
+        
+        .view-toggles {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .view-btn {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            color: var(--text-dim);
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .view-btn:first-child {
+            border-radius: 5px 0 0 5px;
+        }
+        
+        .view-btn:last-child {
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .view-btn.active {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+        
+        /* ============================================
+           CARDS VIEW
+           ============================================ */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        
+        .thought-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .thought-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--card-color, var(--accent-cyan));
+            opacity: 0.7;
+        }
+        
+        .thought-card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .card-type {
+            font-size: 0.65rem;
+            letter-spacing: 1.5px;
+            padding: 3px 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--card-color, var(--text-dim));
+        }
+        
+        .card-date {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        
+        .card-content {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .card-tag {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            color: var(--text-dim);
+        }
+        
+        /* ============================================
+           LIST VIEW
+           ============================================ */
+        .list-view {
+            display: none;
+        }
+        
+        .list-view.active {
+            display: block;
+        }
+        
+        .cards-grid.hidden {
+            display: none;
+        }
+        
+        .list-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px 20px;
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .list-item:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .list-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 6px;
+            flex-shrink: 0;
+        }
+        
+        .list-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .list-text {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .list-meta {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+        
+        /* ============================================
+           DETAIL MODAL
+           ============================================ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 15px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .modal-header {
+            padding: 25px 30px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-type {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            padding: 5px 15px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            transition: color 0.2s ease;
+        }
+        
+        .modal-close:hover {
+            color: var(--accent-magenta);
+        }
+        
+        .modal-body {
+            padding: 25px 30px;
+        }
+        
+        .modal-text {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            margin-bottom: 25px;
+        }
+        
+        .modal-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .modal-tag {
+            font-size: 0.75rem;
+            padding: 4px 12px;
+            background: rgba(255, 0, 255, 0.1);
+            border: 1px solid var(--accent-magenta);
+            border-radius: 12px;
+            color: var(--accent-magenta);
+        }
+        
+        .modal-footer {
+            padding: 15px 30px 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-date {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .modal-btn {
+            padding: 8px 20px;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .modal-btn.edit {
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+        
+        .modal-btn.delete {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid #ff4444;
+            color: #ff4444;
+        }
+        
+        .modal-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        /* ============================================
+           EMPTY STATE
+           ============================================ */
+        .empty-state {
+            text-align: center;
+            padding: 60px 30px;
+            color: var(--text-dim);
+        }
+        
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .empty-text {
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        
+        /* ============================================
+           LOADING
+           ============================================ */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: var(--accent-cyan);
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid transparent;
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 900px) {
+            .sidebar {
+                width: 200px;
+            }
+            
+            .content-area {
+                margin-left: 200px;
+                max-width: calc(100% - 200px);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 10px 15px;
+                flex-wrap: wrap;
+            }
+            
+            .title-container h1 {
+                font-size: 1.1rem;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .content-area {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 15px;
+            }
+            
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-container {
+                padding: 10px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <a href="kahotia_alive.html" class="nav-btn">
+                <span>←</span>
+                <span>KAHOTIA</span>
+            </a>
+            <a href="konscious_ionganicised.html" class="nav-btn graph-btn">
+                <span>◉</span>
+                <span>GRAPH</span>
+            </a>
+            <div class="title-container">
+                <h1>THE LIBRARY</h1>
+                <div class="subtitle">>> ORGANIZED THOUGHTS // STRUCTURED MIND</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="totalCount">0</div>
+                    <div class="stat-label">TOTAL</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="filteredCount">0</div>
+                    <div class="stat-label">SHOWING</div>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- SEARCH -->
+    <div class="search-container">
+        <div class="search-box">
+            <input type="text" class="search-input" id="searchInput" placeholder="Search thoughts, lyrics, ideas...">
+        </div>
+    </div>
+    
+    <!-- MAIN LAYOUT -->
+    <div class="main-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-title">CATEGORIES</div>
+            <div id="categoryList">
+                <!-- Populated by JS -->
+            </div>
+            
+            <div class="sidebar-divider"></div>
+            
+            <div class="sidebar-section-title">POPULAR TAGS</div>
+            <div class="tag-cloud" id="tagCloud">
+                <!-- Populated by JS -->
+            </div>
+        </aside>
+        
+        <!-- CONTENT -->
+        <main class="content-area">
+            <div class="content-header">
+                <div class="content-title">
+                    <span id="currentCategory">All Thoughts</span>
+                    <span id="currentTag"></span>
+                </div>
+                <div class="view-toggles">
+                    <button class="view-btn active" data-view="cards">▦ Cards</button>
+                    <button class="view-btn" data-view="list">☰ List</button>
+                </div>
+            </div>
+            
+            <!-- Loading State -->
+            <div class="loading" id="loadingState">
+                <div class="loading-spinner"></div>
+                <div>Loading thoughts...</div>
+            </div>
+            
+            <!-- Cards View -->
+            <div class="cards-grid" id="cardsView">
+                <!-- Populated by JS -->
+            </div>
+            
+            <!-- List View -->
+            <div class="list-view" id="listView">
+                <!-- Populated by JS -->
+            </div>
+            
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-icon">📭</div>
+                <div class="empty-text">No thoughts match your filters</div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- DETAIL MODAL -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-type" id="modalType">THOUGHT</span>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-text" id="modalText"></div>
+                <div class="modal-tags" id="modalTags"></div>
+            </div>
+            <div class="modal-footer">
+                <span class="modal-date" id="modalDate"></span>
+                <div class="modal-actions">
+                    <button class="modal-btn edit" onclick="editThought()">✏️ Edit</button>
+                    <button class="modal-btn delete" onclick="deleteThought()">🗑️ Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        
+        const BACKEND_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000' 
+            : 'https://web-production-f5f1e.up.railway.app';
+        
+        let supabaseClient = null;
+        
+        // Data
+        let allThoughts = [];
+        let filteredThoughts = [];
+        let selectedThought = null;
+        
+        // Filters
+        let currentCategory = 'all';
+        let currentTag = null;
+        let searchQuery = '';
+        
+        // Type colors
+        const typeColors = {
+            philosophy: '#9966ff',
+            lyrics: '#ffd700',
+            engineering: '#44aaff',
+            code: '#00ff88',
+            thought: '#ff66aa',
+            art: '#ff8844',
+            toll: '#ff00ff',
+            bio: '#00ddaa'
+        };
+        
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        
+        async function init() {
+            // Connect to Supabase
+            try {
+                const response = await fetch(`${BACKEND_URL}/config`);
+                const config = await response.json();
+                
+                if (config.supabase_url && config.supabase_key) {
+                    supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_key);
+                }
+                
+                await loadThoughts();
+            } catch (error) {
+                console.error('Connection failed:', error);
+                document.getElementById('loadingState').innerHTML = '<div class="empty-icon">⚠️</div><div>Failed to connect</div>';
+            }
+            
+            // Setup event listeners
+            setupEventListeners();
+        }
+        
+        function setupEventListeners() {
+            // Search
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase();
+                applyFilters();
+            });
+            
+            // View toggles
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    const view = btn.dataset.view;
+                    document.getElementById('cardsView').classList.toggle('hidden', view !== 'cards');
+                    document.getElementById('listView').classList.toggle('active', view === 'list');
+                });
+            });
+            
+            // Modal close on overlay click
+            document.getElementById('modalOverlay').addEventListener('click', (e) => {
+                if (e.target.id === 'modalOverlay') closeModal();
+            });
+            
+            // Escape to close modal
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeModal();
+            });
+        }
+        
+        // ============================================
+        // DATA LOADING
+        // ============================================
+        
+        async function loadThoughts() {
+            if (!supabaseClient) return;
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('nodes')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                allThoughts = data.map(node => ({
+                    id: node.id,
+                    content: node.content,
+                    type: (node.node_type || 'thought').toLowerCase(),
+                    tags: node.tags || [],
+                    created_at: node.created_at
+                }));
+                
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('totalCount').textContent = allThoughts.length;
+                
+                buildSidebar();
+                applyFilters();
+                
+            } catch (error) {
+                console.error('Load failed:', error);
+            }
+        }
+        
+        // ============================================
+        // SIDEBAR
+        // ============================================
+        
+        function buildSidebar() {
+            // Count by type
+            const typeCounts = { all: allThoughts.length };
+            const tagCounts = {};
+            
+            allThoughts.forEach(t => {
+                typeCounts[t.type] = (typeCounts[t.type] || 0) + 1;
+                t.tags.forEach(tag => {
+                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                });
+            });
+            
+            // Build category list
+            const categoryList = document.getElementById('categoryList');
+            categoryList.innerHTML = '';
+            
+            // All category
+            categoryList.appendChild(createCategoryItem('all', 'All Thoughts', typeCounts.all, '#888'));
+            
+            // Type categories sorted by count
+            Object.entries(typeCounts)
+                .filter(([type]) => type !== 'all')
+                .sort((a, b) => b[1] - a[1])
+                .forEach(([type, count]) => {
+                    const color = typeColors[type] || '#888';
+                    const name = type.charAt(0).toUpperCase() + type.slice(1);
+                    categoryList.appendChild(createCategoryItem(type, name, count, color));
+                });
+            
+            // Build tag cloud (top 15 tags)
+            const tagCloud = document.getElementById('tagCloud');
+            tagCloud.innerHTML = '';
+            
+            Object.entries(tagCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 15)
+                .forEach(([tag, count]) => {
+                    const tagEl = document.createElement('span');
+                    tagEl.className = 'tag-item';
+                    tagEl.textContent = tag;
+                    tagEl.onclick = () => selectTag(tag);
+                    tagCloud.appendChild(tagEl);
+                });
+        }
+        
+        function createCategoryItem(type, name, count, color) {
+            const item = document.createElement('div');
+            item.className = 'category-item' + (currentCategory === type ? ' active' : '');
+            item.onclick = () => selectCategory(type);
+            
+            item.innerHTML = `
+                <div class="category-dot" style="background: ${color}"></div>
+                <span class="category-name">${name}</span>
+                <span class="category-count">${count}</span>
+            `;
+            
+            return item;
+        }
+        
+        // ============================================
+        // FILTERING
+        // ============================================
+        
+        function selectCategory(type) {
+            currentCategory = type;
+            currentTag = null;
+            
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.classList.toggle('active', item.querySelector('.category-name').textContent.toLowerCase() === type || 
+                    (type === 'all' && item.querySelector('.category-name').textContent === 'All Thoughts'));
+            });
+            
+            document.querySelectorAll('.tag-item').forEach(t => t.classList.remove('active'));
+            
+            applyFilters();
+        }
+        
+        function selectTag(tag) {
+            if (currentTag === tag) {
+                currentTag = null;
+                document.querySelectorAll('.tag-item').forEach(t => t.classList.remove('active'));
+            } else {
+                currentTag = tag;
+                document.querySelectorAll('.tag-item').forEach(t => {
+                    t.classList.toggle('active', t.textContent === tag);
+                });
+            }
+            
+            applyFilters();
+        }
+        
+        function applyFilters() {
+            filteredThoughts = allThoughts.filter(t => {
+                // Category filter
+                if (currentCategory !== 'all' && t.type !== currentCategory) return false;
+                
+                // Tag filter
+                if (currentTag && !t.tags.includes(currentTag)) return false;
+                
+                // Search filter
+                if (searchQuery) {
+                    const searchIn = (t.content + ' ' + t.tags.join(' ')).toLowerCase();
+                    if (!searchIn.includes(searchQuery)) return false;
+                }
+                
+                return true;
+            });
+            
+            // Update UI
+            document.getElementById('filteredCount').textContent = filteredThoughts.length;
+            
+            const categoryName = currentCategory === 'all' ? 'All Thoughts' : 
+                currentCategory.charAt(0).toUpperCase() + currentCategory.slice(1);
+            document.getElementById('currentCategory').textContent = categoryName;
+            document.getElementById('currentTag').textContent = currentTag ? ` › #${currentTag}` : '';
+            
+            renderThoughts();
+        }
+        
+        // ============================================
+        // RENDERING
+        // ============================================
+        
+        function renderThoughts() {
+            const cardsView = document.getElementById('cardsView');
+            const listView = document.getElementById('listView');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (filteredThoughts.length === 0) {
+                cardsView.innerHTML = '';
+                listView.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            // Render cards
+            cardsView.innerHTML = filteredThoughts.map(t => createCard(t)).join('');
+            
+            // Render list
+            listView.innerHTML = filteredThoughts.map(t => createListItem(t)).join('');
+            
+            // Add click handlers
+            document.querySelectorAll('.thought-card, .list-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const id = parseInt(el.dataset.id);
+                    openModal(filteredThoughts.find(t => t.id === id));
+                });
+            });
+        }
+        
+        function createCard(thought) {
+            const color = typeColors[thought.type] || '#888';
+            const date = new Date(thought.created_at).toLocaleDateString();
+            const tags = thought.tags.slice(0, 4).map(t => `<span class="card-tag">${t}</span>`).join('');
+            
+            return `
+                <div class="thought-card" data-id="${thought.id}" style="--card-color: ${color}">
+                    <div class="card-header">
+                        <span class="card-type" style="color: ${color}">${thought.type.toUpperCase()}</span>
+                        <span class="card-date">${date}</span>
+                    </div>
+                    <div class="card-content">${escapeHtml(thought.content)}</div>
+                    <div class="card-tags">${tags}</div>
+                </div>
+            `;
+        }
+        
+        function createListItem(thought) {
+            const color = typeColors[thought.type] || '#888';
+            const date = new Date(thought.created_at).toLocaleDateString();
+            const firstLine = thought.content.split('\n')[0].substring(0, 100);
+            
+            return `
+                <div class="list-item" data-id="${thought.id}">
+                    <div class="list-dot" style="background: ${color}"></div>
+                    <div class="list-content">
+                        <div class="list-text">${escapeHtml(firstLine)}</div>
+                        <div class="list-meta">
+                            <span>${thought.type}</span>
+                            <span>${date}</span>
+                            <span>${thought.tags.length} tags</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // ============================================
+        // MODAL
+        // ============================================
+        
+        function openModal(thought) {
+            if (!thought) return;
+            selectedThought = thought;
+            
+            const color = typeColors[thought.type] || '#888';
+            
+            document.getElementById('modalType').textContent = thought.type.toUpperCase();
+            document.getElementById('modalType').style.color = color;
+            document.getElementById('modalText').textContent = thought.content;
+            document.getElementById('modalDate').textContent = new Date(thought.created_at).toLocaleString();
+            
+            const tagsHtml = thought.tags.map(t => `<span class="modal-tag">${t}</span>`).join('');
+            document.getElementById('modalTags').innerHTML = tagsHtml;
+            
+            document.getElementById('modalOverlay').classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+            selectedThought = null;
+        }
+        
+        async function editThought() {
+            if (!selectedThought || !supabaseClient) return;
+            
+            const newContent = prompt('Edit thought:', selectedThought.content);
+            if (!newContent || newContent === selectedThought.content) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('nodes')
+                    .update({ content: newContent })
+                    .eq('id', selectedThought.id);
+                
+                if (error) throw error;
+                
+                selectedThought.content = newContent;
+                const idx = allThoughts.findIndex(t => t.id === selectedThought.id);
+                if (idx !== -1) allThoughts[idx].content = newContent;
+                
+                document.getElementById('modalText').textContent = newContent;
+                applyFilters();
+                
+            } catch (error) {
+                alert('Update failed: ' + error.message);
+            }
+        }
+        
+        async function deleteThought() {
+            if (!selectedThought || !supabaseClient) return;
+            
+            if (!confirm('Delete this thought?')) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('nodes')
+                    .delete()
+                    .eq('id', selectedThought.id);
+                
+                if (error) throw error;
+                
+                allThoughts = allThoughts.filter(t => t.id !== selectedThought.id);
+                document.getElementById('totalCount').textContent = allThoughts.length;
+                
+                closeModal();
+                buildSidebar();
+                applyFilters();
+                
+            } catch (error) {
+                alert('Delete failed: ' + error.message);
+            }
+        }
+        
+        // ============================================
+        // START
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
