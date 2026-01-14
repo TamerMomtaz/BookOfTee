@@ -961,9 +961,11 @@
                 const data = await response.json();
                 console.log('>> Response data:', data);
                 
-               if (data.success) {
+              if (data.success) {
                     addChatMessage(data.response, 'kahotia');
-                    if (data.audio) playKahotiaVoice(data.audio);
+                    if (data.audio_chunks && data.audio_chunks.length > 0) {
+                        playKahotiaVoice(data.audio_chunks);
+                    }
                     conversationHistory.push({ role: 'assistant', content: data.response });
                     
                    // Save Kahotia's response to dialogues
@@ -995,14 +997,47 @@
             container.scrollTop = container.scrollHeight;
         }
         
-        function playKahotiaVoice(audioBase64) {
-            if (!audioBase64) return;
+        // Audio queue for chunked playback
+        let audioQueue = [];
+        let isPlayingAudio = false;
+        
+        function playKahotiaVoice(audioChunks) {
+            if (!audioChunks || audioChunks.length === 0) return;
+            
+            console.log(`>> Playing ${audioChunks.length} audio chunk(s)`);
+            audioQueue = [...audioChunks];
+            isPlayingAudio = true;
+            document.getElementById('kahotiaStatus').textContent = 'SPEAKING...';
+            
+            playNextChunk();
+        }
+        
+        function playNextChunk() {
+            if (audioQueue.length === 0) {
+                isPlayingAudio = false;
+                document.getElementById('kahotiaStatus').textContent = 'WATCHING';
+                console.log('>> Voice playback complete');
+                return;
+            }
+            
+            const chunk = audioQueue.shift();
+            
             try {
-                const audio = new Audio('data:audio/mpeg;base64,' + audioBase64);
+                const audio = new Audio('data:audio/mpeg;base64,' + chunk);
+                
+                audio.onended = () => {
+                    playNextChunk();  // Play next chunk when current ends
+                };
+                
+                audio.onerror = (e) => {
+                    console.error('>> Chunk playback error:', e);
+                    playNextChunk();  // Skip to next on error
+                };
+                
                 audio.play();
-                console.log('>> Playing Kahotia voice');
             } catch (error) {
-                console.error('>> Audio playback failed:', error);
+                console.error('>> Audio error:', error);
+                playNextChunk();
             }
         }
         
