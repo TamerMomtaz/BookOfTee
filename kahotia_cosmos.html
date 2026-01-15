@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>THE BOOK OF TEE - Kahotia Cosmos</title>
     
-    <!-- Three.js -->
+   <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- GLTFLoader for 3D model -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -572,6 +574,10 @@
         // ============================================
         
         const BACKEND_URL = 'https://web-production-f5f1e.up.railway.app';
+        
+        // GLB MODEL PATH
+        const KAHOTIA_GLB_PATH = './models/two-tone_humanoid_3d_model.glb';
+        
         let SUPABASE_URL = '';
         let SUPABASE_KEY = '';
         // Color mapping
@@ -590,6 +596,9 @@
         
         let scene, camera, renderer, controls;
         let kahotia, kahotiaGroup;
+        let kahotiaModel = null;  // GLB model reference
+        let kahotiaModelLoaded = false;
+        let mixer = null;  // Animation mixer for GLB
         let thoughtOrbs = [];
         let connections = [];
         let allNodes = [];
@@ -631,7 +640,7 @@
             createStarfield();
             
             updateLoadingStatus('Summoning Kahotia...', 35);
-            createKahotia();
+            await loadKahotiaModel();
             
             updateLoadingStatus('Connecting to thought matrix...', 50);
             await loadNodesFromSupabase();
@@ -753,7 +762,80 @@
         }
         
         // ============================================
-        // KAHOTIA - THE COSMIC MASCOT
+        // LOAD KAHOTIA GLB MODEL
+        // ============================================
+        
+        async function loadKahotiaModel() {
+            return new Promise((resolve) => {
+                const loader = new THREE.GLTFLoader();
+                
+                loader.load(
+                    KAHOTIA_GLB_PATH,
+                    (gltf) => {
+                        console.log('>> GLB Model loaded successfully!');
+                        kahotiaModel = gltf.scene;
+                        kahotiaModelLoaded = true;
+                        
+                        // Scale and position - adjust as needed
+                        kahotiaModel.scale.set(30, 30, 30);
+                        kahotiaModel.position.set(0, 0, 0);
+                        
+                        // Add emissive glow to materials
+                        kahotiaModel.traverse((child) => {
+                            if (child.isMesh && child.material) {
+                                child.material.emissive = new THREE.Color(0x1e90ff);
+                                child.material.emissiveIntensity = 0.2;
+                            }
+                        });
+                        
+                        // Create group for model + effects
+                        kahotiaGroup = new THREE.Group();
+                        kahotiaGroup.add(kahotiaModel);
+                        
+                        // Add aura around model
+                        const auraGeometry = new THREE.SphereGeometry(40, 32, 32);
+                        const auraMaterial = new THREE.MeshBasicMaterial({
+                            color: 0xff00ff,
+                            transparent: true,
+                            opacity: 0.1,
+                            side: THREE.BackSide
+                        });
+                        const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+                        kahotiaGroup.add(aura);
+                        
+                        // Store references
+                        kahotia = kahotiaGroup;
+                        kahotia.userData = { aura: aura, model: kahotiaModel };
+                        
+                        // Setup animations if present in GLB
+                        if (gltf.animations && gltf.animations.length > 0) {
+                            mixer = new THREE.AnimationMixer(kahotiaModel);
+                            gltf.animations.forEach((clip) => {
+                                mixer.clipAction(clip).play();
+                            });
+                            console.log(`>> ${gltf.animations.length} animations loaded`);
+                        }
+                        
+                        scene.add(kahotiaGroup);
+                        resolve();
+                    },
+                    (progress) => {
+                        if (progress.total > 0) {
+                            const percent = (progress.loaded / progress.total) * 100;
+                            console.log(`>> Loading GLB: ${percent.toFixed(1)}%`);
+                        }
+                    },
+                    (error) => {
+                        console.warn('>> GLB load failed, using procedural Kahotia:', error);
+                        createKahotia();  // Fallback to procedural
+                        resolve();
+                    }
+                );
+            });
+        }
+        
+        // ============================================
+        // KAHOTIA - THE COSMIC MASCOT (PROCEDURAL FALLBACK)
         // ============================================
         
        function createKahotia() {
@@ -1164,6 +1246,11 @@
             
             const time = clock.getElapsedTime();
             const delta = clock.getDelta();
+            
+            // Update GLB animations if present
+            if (mixer) {
+                mixer.update(delta);
+            }
             
             // Animate Kahotia
             animateKahotia(time);
