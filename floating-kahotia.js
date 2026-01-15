@@ -226,9 +226,12 @@
     // THREE.JS MINI SCENE
     // ============================================
     let scene, camera, renderer, kahotia, mixer;
-    let clock = new THREE.Clock();
+    let clock = null;  // Initialize after Three.js loads
     
     function initThreeJS() {
+        // Initialize clock now that Three.js is loaded
+        clock = new THREE.Clock();
+        
         // Scene
         scene = new THREE.Scene();
         
