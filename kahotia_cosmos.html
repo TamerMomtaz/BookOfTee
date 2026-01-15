@@ -819,9 +819,13 @@
                         if (gltf.animations && gltf.animations.length > 0) {
                             mixer = new THREE.AnimationMixer(kahotiaModel);
                             gltf.animations.forEach((clip) => {
-                                mixer.clipAction(clip).play();
+                                const action = mixer.clipAction(clip);
+                                action.setLoop(THREE.LoopRepeat);
+                                action.clampWhenFinished = false;
+                                action.play();
+                                console.log(`>> Playing animation: ${clip.name}, duration: ${clip.duration}s`);
                             });
-                            console.log(`>> ${gltf.animations.length} animations loaded`);
+                            console.log(`>> ${gltf.animations.length} animations loaded and started`);
                         }
                         
                         scene.add(kahotiaGroup);
@@ -1250,15 +1254,15 @@
         // ============================================
         
         function animate() {
-            requestAnimationFrame(animate);
-            
-            const time = clock.getElapsedTime();
-            const delta = clock.getDelta();
-            
-            // Update GLB animations if present
-            if (mixer) {
-                mixer.update(delta);
-            }
+    requestAnimationFrame(animate);
+    
+    const delta = clock.getDelta();
+    const time = clock.getElapsedTime();
+    
+    // Update GLB animations if present
+    if (mixer) {
+        mixer.update(delta || 0.016); // Fallback to ~60fps if delta is 0
+    }
             
             // Animate Kahotia
             animateKahotia(time);
