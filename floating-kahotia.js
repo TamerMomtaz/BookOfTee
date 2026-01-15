@@ -317,7 +317,7 @@
             emissive: 0x2a1a0a,
             shininess: 10
         });
-        const fabricGeo = new THREE.SphereGeometry(0.5, 32, 32, 0, Math.PI);
+        const fabricGeo = new THREE.SphereGeometry(1.5, 32, 32, 0, Math.PI);
         const fabric = new THREE.Mesh(fabricGeo, fabricMat);
         fabric.rotation.y = -Math.PI / 2;
         group.add(fabric);
@@ -331,7 +331,7 @@
             transparent: true,
             opacity: 0.9
         });
-        const cosmicGeo = new THREE.SphereGeometry(0.5, 32, 32, Math.PI, Math.PI);
+        const cosmicGeo = new THREE.SphereGeometry(1.5, 32, 32, Math.PI, Math.PI);
         const cosmic = new THREE.Mesh(cosmicGeo, cosmicMat);
         cosmic.rotation.y = -Math.PI / 2;
         group.add(cosmic);
