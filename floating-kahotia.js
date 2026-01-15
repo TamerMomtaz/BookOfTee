@@ -266,9 +266,10 @@
     }
     
     function loadKahotiaModel() {
-        if (typeof THREE.GLTFLoader === 'undefined') {
+        if (typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') {
             console.log('>> GLTFLoader not available, using procedural Kahotia');
             createProceduralKahotia();
+            animate();
             return;
         }
         
