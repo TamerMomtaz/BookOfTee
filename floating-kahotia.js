@@ -13,7 +13,7 @@
         size: 80,                    // Size of floating Kahotia
         position: 'bottom-right',    // bottom-right, bottom-left, top-right, top-left
         offset: 20,                  // Distance from edge
-        glbPath: './models/two-tone_humanoid_3d_model.glb',
+        glbPath: './models/kahotia_hip_hop.glb',
         enableDrag: true,
         showTooltip: true,
         linkTo: 'kahotia_cosmos.html'  // Where to go when clicked
@@ -279,7 +279,8 @@
             (gltf) => {
                 console.log('>> Floating Kahotia GLB loaded');
                 kahotia = gltf.scene;
-                kahotia.scale.set(0.8, 0.8, 0.8);
+                kahotia.scale.set(4, 4, 4);
+                kahotia.position.y = -1.5;
                 
                 // Enhance materials
                 kahotia.traverse((child) => {
