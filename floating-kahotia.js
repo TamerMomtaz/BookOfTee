@@ -15,9 +15,9 @@
         offset: 20,                  // Distance from edge
         glbFiles: [
             './models/kahotia_hip_hop.glb',
-            './models/jazz dance.glb',
-            './models/goal keeper.glb',
-            './models/swiming .glb'
+            './models/jazz_dance.glb',
+            './models/goal_keeper.glb',
+            './models/swiming.glb'
         ],
         glbPath: null,  // Will be set randomly
         enableDrag: true,
