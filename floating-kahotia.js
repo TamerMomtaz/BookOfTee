@@ -16,8 +16,7 @@
         glbFiles: [
             './models/kahotia_hip_hop.glb',
             './models/jazz_dance.glb',
-            './models/goal_keeper.glb',
-            './models/swiming.glb'
+            './models/goal_keeper.glb'
         ],
         glbPath: null,  // Will be set randomly
         enableDrag: true,
