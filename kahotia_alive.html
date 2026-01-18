@@ -771,11 +771,23 @@
             <div class="chat-container" id="chatContainer">
                 <div class="chat-message system">>> KAHOTIA BRAIN CONNECTED. The Thought Police awaits your queries.</div>
             </div>
-            <div class="chat-input-container">
-                <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Voice Input">🎤</button>
-                <input type="text" class="chat-input" id="chatInput" placeholder="Query the Wave... or pay your toll..." onkeypress="handleEnter(event)">
-                <button class="send-btn" id="sendBtn" onclick="sendMessage()">TRANSMIT</button>
-            </div>
+            <div class="planet-routing" id="planetRouting" style="display:none; margin-bottom: 15px; padding: 10px; background: rgba(255,0,255,0.05); border: 1px solid rgba(255,0,255,0.2); border-radius: 8px;">
+    <div style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 8px; letter-spacing: 1px;">ROUTE THIS THOUGHT TO:</div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="route-btn" onclick="routeThought('philosophtee')" style="background: rgba(155,89,182,0.2); border: 1px solid #9b59b6; color: #9b59b6; padding: 6px 12px; border-radius: 15px; font-size: 0.75rem; cursor: pointer;">PhilosophTee</button>
+        <button class="route-btn" onclick="routeThought('lyrictee')" style="background: rgba(241,196,15,0.2); border: 1px solid #f1c40f; color: #f1c40f; padding: 6px 12px; border-radius: 15px; font-size: 0.75rem; cursor: pointer;">LyricTee</button>
+        <button class="route-btn" onclick="routeThought('artistee')" style="background: rgba(230,126,34,0.2); border: 1px solid #e67e22; color: #e67e22; padding: 6px 12px; border-radius: 15px; font-size: 0.75rem; cursor: pointer;">ArtisTee</button>
+        <button class="route-btn" onclick="routeThought('plantee')" style="background: rgba(39,174,96,0.2); border: 1px solid #27ae60; color: #27ae60; padding: 6px 12px; border-radius: 15px; font-size: 0.75rem; cursor: pointer;">PlanTee</button>
+        <button class="route-btn" onclick="routeThought('codetee')" style="background: rgba(0,240,255,0.2); border: 1px solid #00f0ff; color: #00f0ff; padding: 6px 12px; border-radius: 15px; font-size: 0.75rem; cursor: pointer;">CodeTee</button>
+        <button class="route-btn" onclick="routeThought('dialoguena')" style="background: rgba(255,0,255,0.2); border: 1px solid #ff00ff; color: #ff00ff; padding: 6px 12px; border-radius: 15px; font-size: 0.75rem; cursor: pointer;">DialogueNa</button>
+        <button class="route-btn" onclick="hideRouting()" style="background: transparent; border: 1px solid var(--text-dim); color: var(--text-dim); padding: 6px 12px; border-radius: 15px; font-size: 0.75rem; cursor: pointer;">Skip</button>
+    </div>
+</div>
+<div class="chat-input-container">
+    <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Voice Input">🎤</button>
+    <input type="text" class="chat-input" id="chatInput" placeholder="Query the Wave... or pay your toll..." onkeypress="handleEnter(event)">
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">TRANSMIT</button>
+</div>
         </div>
     </div>
     
@@ -975,8 +987,11 @@
                    // Save Kahotia's response to dialogues
                     await saveDialogue(data.response, 'kahotia');
                    
-                   // Auto-tag and save the message
-                    await tagMessage(message);
+                  // Auto-tag and save the message
+await tagMessage(message);
+
+// Show routing options
+showRoutingOptions(message);
                 } else {
                     addChatMessage(`>> ERROR: ${data.error || 'Unknown error'}`, 'system');
                 }
@@ -1350,6 +1365,54 @@ init = async function() {
     await originalInit();
     initGallery();
 };
+    // ============================================
+// PLANET ROUTING
+// ============================================
+
+let lastUserMessage = '';
+
+function showRoutingOptions(message) {
+    lastUserMessage = message;
+    document.getElementById('planetRouting').style.display = 'block';
+}
+
+function hideRouting() {
+    document.getElementById('planetRouting').style.display = 'none';
+    lastUserMessage = '';
+}
+
+async function routeThought(planet) {
+    if (!lastUserMessage) return;
+    
+    const planetNames = {
+        philosophtee: 'PhilosophTee',
+        lyrictee: 'LyricTee', 
+        artistee: 'ArtisTee',
+        plantee: 'PlanTee',
+        codetee: 'CodeTee',
+        dialoguena: 'DialogueNa'
+    };
+    
+    const planetTypes = {
+        philosophtee: 'Philosophy',
+        lyrictee: 'Lyrics',
+        artistee: 'Art',
+        plantee: 'Plant',
+        codetee: 'Code',
+        dialoguena: 'Thought'
+    };
+    
+    try {
+        // Save with planet-specific type
+        await saveThought(lastUserMessage, [planetTypes[planet], planet]);
+        addChatMessage(`>> Thought routed to ${planetNames[planet]} 🪐`, 'system');
+        showToast(`🪐 Routed to ${planetNames[planet]}!`, 'success');
+    } catch (error) {
+        console.error('Routing failed:', error);
+    }
+    
+    hideRouting();
+}
     </script>
 <!-- FLOATING KAHOTIA -->
     <script src="floating-kahotia.js"></script>
