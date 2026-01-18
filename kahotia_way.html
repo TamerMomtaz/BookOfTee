@@ -986,13 +986,13 @@
                 });
             });
             
-            // Enter planet button
-            document.getElementById('enterPlanetBtn').addEventListener('click', () => {
-                if (selectedPlanet) {
-                    // Navigate to cosmos with filter
-                    window.location.href = `kahotia_cosmos.html?filter=${selectedPlanet}`;
-                }
-            });
+           // Enter planet button
+document.getElementById('enterPlanetBtn').addEventListener('click', () => {
+    if (selectedPlanet) {
+        // Navigate to ManifesTee with planet filter
+        window.location.href = `manifestee.html?planet=${selectedPlanet}`;
+    }
+});
         }
         
         function updateCameraPosition() {
