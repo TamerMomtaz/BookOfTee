@@ -13,7 +13,13 @@
         size: 80,                    // Size of floating Kahotia
         position: 'bottom-right',    // bottom-right, bottom-left, top-right, top-left
         offset: 20,                  // Distance from edge
-        glbPath: './models/kahotia_hip_hop.glb',
+        glbFiles: [
+            './models/kahotia_hip_hop.glb',
+            './models/jazz dance.glb',
+            './models/goal keeper.glb',
+            './models/swiming .glb'
+        ],
+        glbPath: null,  // Will be set randomly
         enableDrag: true,
         showTooltip: true,
         linkTo: 'kahotia_cosmos.html'  // Where to go when clicked
@@ -273,14 +279,27 @@
             return;
         }
         
-        const loader = new THREE.GLTFLoader();
+       const loader = new THREE.GLTFLoader();
+        
+        // Setup DRACO for compressed models
+        if (typeof THREE.DRACOLoader !== 'undefined') {
+            const dracoLoader = new THREE.DRACOLoader();
+            dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
+            loader.setDRACOLoader(dracoLoader);
+            console.log('>> DRACO decoder configured');
+        }
+        
+        // Pick random animation
+        const randomGLB = CONFIG.glbFiles[Math.floor(Math.random() * CONFIG.glbFiles.length)];
+        console.log(`>> Loading random Kahotia: ${randomGLB}`);
+        
         loader.load(
-            CONFIG.glbPath,
+            randomGLB,
             (gltf) => {
                 console.log('>> Floating Kahotia GLB loaded');
                 kahotia = gltf.scene;
-                kahotia.scale.set(4, 4, 4);
-                kahotia.position.y = -1.5;
+                kahotia.scale.set(3, 3, 3);
+                kahotia.position.y = -1.8;  // Center in the portal
                 
                 // Enhance materials
                 kahotia.traverse((child) => {
@@ -576,17 +595,34 @@
     // ============================================
     
     // Wait for Three.js to be available
+    // Wait for Three.js to be available
     function waitForThreeJS() {
-        if (typeof THREE !== 'undefined') {
+        if (typeof THREE !== 'undefined' && typeof THREE.GLTFLoader !== 'undefined' && typeof THREE.DRACOLoader !== 'undefined') {
             initThreeJS();
+        } else if (typeof THREE !== 'undefined' && typeof THREE.GLTFLoader === 'undefined') {
+            // Three exists but loaders don't - load them
+            const gltfScript = document.createElement('script');
+            gltfScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+            gltfScript.onload = () => {
+                const dracoScript = document.createElement('script');
+                dracoScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js';
+                dracoScript.onload = initThreeJS;
+                document.head.appendChild(dracoScript);
+            };
+            document.head.appendChild(gltfScript);
         } else {
-            // Inject Three.js if not present
+            // Nothing exists - load everything
             const script = document.createElement('script');
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
             script.onload = () => {
                 const gltfScript = document.createElement('script');
                 gltfScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
-                gltfScript.onload = initThreeJS;
+                gltfScript.onload = () => {
+                    const dracoScript = document.createElement('script');
+                    dracoScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js';
+                    dracoScript.onload = initThreeJS;
+                    document.head.appendChild(dracoScript);
+                };
                 document.head.appendChild(gltfScript);
             };
             document.head.appendChild(script);
