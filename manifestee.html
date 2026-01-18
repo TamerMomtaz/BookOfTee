@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE BOOK OF TEE - The ManifesTee</title>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --void-black: #030308;
+            --bg-card: #0a0a14;
+            --star-cyan: #00f0ff;
+            --cosmic-magenta: #ff00ff;
+            --thought-gold: #ffd700;
+            --text-primary: #e0e0e0;
+            --text-dim: #666;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: var(--void-black);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--cosmic-magenta);
+            background: linear-gradient(180deg, #0f0f15 0%, var(--void-black) 100%);
+        }
+        
+        .header h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            background: linear-gradient(90deg, var(--cosmic-magenta), var(--thought-gold), var(--star-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 4px;
+        }
+        
+        .header .subtitle {
+            color: var(--text-dim);
+            margin-top: 5px;
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-link {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            color: var(--star-cyan);
+            text-decoration: none;
+            padding: 8px 15px;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 3px;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+        }
+        
+        .nav-link:hover {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: var(--star-cyan);
+        }
+        
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            min-height: calc(100vh - 120px);
+        }
+        
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid #2a2a3a;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .panel-title {
+            font-family: 'Orbitron', monospace;
+            color: var(--cosmic-magenta);
+            font-size: 1rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a2a3a;
+            letter-spacing: 2px;
+        }
+        
+        /* Source Thoughts Panel */
+        .thought-list {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .thought-item {
+            background: rgba(255, 0, 255, 0.05);
+            border: 1px solid rgba(255, 0, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: grab;
+            transition: all 0.3s ease;
+        }
+        
+        .thought-item:hover {
+            border-color: var(--cosmic-magenta);
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.2);
+        }
+        
+        .thought-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        
+        .thought-content {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+        
+        .thought-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+        
+        .thought-type {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .thought-type.Philosophy { background: rgba(155,89,182,0.3); color: #9b59b6; }
+        .thought-type.Lyrics { background: rgba(241,196,15,0.3); color: #f1c40f; }
+        .thought-type.Art { background: rgba(230,126,34,0.3); color: #e67e22; }
+        .thought-type.Plant { background: rgba(39,174,96,0.3); color: #27ae60; }
+        .thought-type.Code { background: rgba(0,240,255,0.3); color: #00f0ff; }
+        .thought-type.Thought { background: rgba(255,0,255,0.3); color: #ff00ff; }
+        
+        /* Workbench (Center) */
+        .workbench {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .cyclone-zone {
+            flex: 1;
+            border: 2px dashed rgba(255, 0, 255, 0.3);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cyclone-zone.drag-over {
+            border-color: var(--cosmic-magenta);
+            background: rgba(255, 0, 255, 0.05);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.3);
+        }
+        
+        .cyclone-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            animation: spin 10s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .cyclone-text {
+            font-family: 'Orbitron', monospace;
+            color: var(--cosmic-magenta);
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+        }
+        
+        .cyclone-hint {
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            margin-top: 10px;
+        }
+        
+        .dropped-thoughts {
+            width: 100%;
+            padding: 15px;
+        }
+        
+        .dropped-thought {
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid var(--star-cyan);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+        
+        /* Action Plan Panel */
+        .action-plan {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .plan-section {
+            margin-bottom: 20px;
+        }
+        
+        .plan-label {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            color: var(--star-cyan);
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .plan-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #2a2a3a;
+            border-radius: 5px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+        
+        .plan-input:focus {
+            outline: none;
+            border-color: var(--star-cyan);
+        }
+        
+        .plan-input::placeholder {
+            color: var(--text-dim);
+        }
+        
+        .generate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--cosmic-magenta), var(--star-cyan));
+            border: none;
+            border-radius: 8px;
+            color: var(--void-black);
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+        
+        .generate-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+        
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .action-steps {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 240, 255, 0.05);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .action-steps.active {
+            display: block;
+        }
+        
+        .action-steps h4 {
+            font-family: 'Orbitron', monospace;
+            color: var(--thought-gold);
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        
+        .step-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+        
+        .step-number {
+            font-family: 'Orbitron', monospace;
+            color: var(--cosmic-magenta);
+            font-weight: bold;
+        }
+        
+        .step-text {
+            flex: 1;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        
+        .step-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-tab {
+            padding: 6px 12px;
+            border: 1px solid #2a2a3a;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: transparent;
+            color: var(--text-dim);
+        }
+        
+        .filter-tab:hover, .filter-tab.active {
+            border-color: var(--cosmic-magenta);
+            color: var(--cosmic-magenta);
+            background: rgba(255, 0, 255, 0.1);
+        }
+        
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--text-dim);
+            border-top-color: var(--star-cyan);
+            border-radius: 50%;
+            animation: spinLoader 1s linear infinite;
+        }
+        
+        @keyframes spinLoader {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>THE MANIFESTEE</h1>
+        <p class="subtitle">>> Where Thoughts Become Reality</p>
+        <nav class="nav-links">
+            <a href="kahotia_alive.html" class="nav-link">💬 CHAT</a>
+            <a href="kahotia_way.html" class="nav-link">🌌 KAHOTIA WAY</a>
+            <a href="kahotia_cosmos.html" class="nav-link">🚀 COSMOS</a>
+            <a href="konscious_ionganicised.html" class="nav-link">🧠 KONSCIOUS</a>
+        </nav>
+    </header>
+    
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Left: Source Thoughts -->
+        <div class="panel">
+            <div class="panel-title">🌟 SOURCE THOUGHTS</div>
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all">All</button>
+                <button class="filter-tab" data-filter="Philosophy">Philosophy</button>
+                <button class="filter-tab" data-filter="Lyrics">Lyrics</button>
+                <button class="filter-tab" data-filter="Art">Art</button>
+                <button class="filter-tab" data-filter="Code">Code</button>
+            </div>
+            <div class="thought-list" id="thoughtList">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+        
+        <!-- Center: Cyclone Workbench -->
+        <div class="panel workbench">
+            <div class="panel-title">🌀 THE CYCLONE</div>
+            <div class="cyclone-zone" id="cycloneZone">
+                <div class="cyclone-icon">🌀</div>
+                <div class="cyclone-text">DROP THOUGHTS HERE</div>
+                <div class="cyclone-hint">Drag thoughts from the left to begin manifestation</div>
+                <div class="dropped-thoughts" id="droppedThoughts"></div>
+            </div>
+        </div>
+        
+        <!-- Right: Action Plan -->
+        <div class="panel action-plan">
+            <div class="panel-title">⚡ ACTION PLAN</div>
+            
+            <div class="plan-section">
+                <div class="plan-label">PROJECT NAME</div>
+                <input type="text" class="plan-input" id="projectName" placeholder="What are you manifesting?">
+            </div>
+            
+            <div class="plan-section">
+                <div class="plan-label">VISION</div>
+                <textarea class="plan-input" id="projectVision" rows="3" placeholder="Describe the end result..."></textarea>
+            </div>
+            
+            <div class="plan-section">
+                <div class="plan-label">DEADLINE</div>
+                <input type="date" class="plan-input" id="projectDeadline">
+            </div>
+            
+            <button class="generate-btn" id="generateBtn" onclick="generateActionPlan()">
+                🔮 GENERATE ACTION PLAN
+            </button>
+            
+            <div class="action-steps" id="actionSteps">
+                <h4>📋 MANIFESTATION STEPS</h4>
+                <div id="stepsList"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        
+        const BACKEND_URL = 'https://web-production-f5f1e.up.railway.app';
+        let supabaseClient = null;
+        let allThoughts = [];
+        let droppedThoughts = [];
+        let currentFilter = 'all';
+        
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        
+        async function init() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/config`);
+                const config = await response.json();
+                
+                if (config.supabase_url && config.supabase_key) {
+                    supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_key);
+                    console.log('>> ManifesTee connected to Supabase');
+                }
+                
+                await loadThoughts();
+                setupDragAndDrop();
+                setupFilters();
+                
+            } catch (error) {
+                console.error('>> Init failed:', error);
+            }
+        }
+        
+        // ============================================
+        // LOAD THOUGHTS
+        // ============================================
+        
+        async function loadThoughts() {
+            if (!supabaseClient) return;
+            
+            try {
+                const { data: nodes, error } = await supabaseClient
+                    .from('nodes')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
+                
+                if (error) throw error;
+                
+                allThoughts = nodes || [];
+                renderThoughts();
+                
+            } catch (error) {
+                console.error('>> Failed to load thoughts:', error);
+            }
+        }
+        
+        function renderThoughts() {
+            const container = document.getElementById('thoughtList');
+            container.innerHTML = '';
+            
+            const filtered = currentFilter === 'all' 
+                ? allThoughts 
+                : allThoughts.filter(t => t.node_type === currentFilter);
+            
+            filtered.forEach((thought, index) => {
+                const div = document.createElement('div');
+                div.className = 'thought-item';
+                div.draggable = true;
+                div.dataset.index = index;
+                div.dataset.id = thought.id;
+                
+                const content = thought.content.length > 150 
+                    ? thought.content.substring(0, 150) + '...' 
+                    : thought.content;
+                
+                div.innerHTML = `
+                    <div class="thought-content">${content}</div>
+                    <div class="thought-meta">
+                        <span class="thought-type ${thought.node_type}">${thought.node_type}</span>
+                        <span>${new Date(thought.created_at).toLocaleDateString()}</span>
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+        
+        // ============================================
+        // DRAG AND DROP
+        // ============================================
+        
+        function setupDragAndDrop() {
+            const thoughtList = document.getElementById('thoughtList');
+            const cycloneZone = document.getElementById('cycloneZone');
+            
+            // Drag start
+            thoughtList.addEventListener('dragstart', (e) => {
+                if (e.target.classList.contains('thought-item')) {
+                    e.target.classList.add('dragging');
+                    e.dataTransfer.setData('text/plain', e.target.dataset.id);
+                }
+            });
+            
+            // Drag end
+            thoughtList.addEventListener('dragend', (e) => {
+                if (e.target.classList.contains('thought-item')) {
+                    e.target.classList.remove('dragging');
+                }
+            });
+            
+            // Drag over cyclone
+            cycloneZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                cycloneZone.classList.add('drag-over');
+            });
+            
+            // Drag leave cyclone
+            cycloneZone.addEventListener('dragleave', () => {
+                cycloneZone.classList.remove('drag-over');
+            });
+            
+            // Drop on cyclone
+            cycloneZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                cycloneZone.classList.remove('drag-over');
+                
+                const thoughtId = e.dataTransfer.getData('text/plain');
+                const thought = allThoughts.find(t => t.id === thoughtId);
+                
+                if (thought && !droppedThoughts.find(t => t.id === thoughtId)) {
+                    droppedThoughts.push(thought);
+                    renderDroppedThoughts();
+                }
+            });
+        }
+        
+        function renderDroppedThoughts() {
+            const container = document.getElementById('droppedThoughts');
+            
+            if (droppedThoughts.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            container.innerHTML = droppedThoughts.map((t, i) => `
+                <div class="dropped-thought">
+                    <strong>#${i + 1}:</strong> ${t.content.substring(0, 100)}...
+                    <span style="float:right;cursor:pointer;color:var(--text-dim);" onclick="removeDropped(${i})">✕</span>
+                </div>
+            `).join('');
+        }
+        
+        function removeDropped(index) {
+            droppedThoughts.splice(index, 1);
+            renderDroppedThoughts();
+        }
+        
+        // ============================================
+        // FILTERS
+        // ============================================
+        
+        function setupFilters() {
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentFilter = tab.dataset.filter;
+                    renderThoughts();
+                });
+            });
+        }
+        
+        // ============================================
+        // GENERATE ACTION PLAN
+        // ============================================
+        
+        async function generateActionPlan() {
+            const projectName = document.getElementById('projectName').value.trim();
+            const vision = document.getElementById('projectVision').value.trim();
+            const deadline = document.getElementById('projectDeadline').value;
+            
+            if (!projectName) {
+                alert('Please enter a project name');
+                return;
+            }
+            
+            if (droppedThoughts.length === 0) {
+                alert('Please drop some thoughts into the cyclone first');
+                return;
+            }
+            
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> MANIFESTING...';
+            
+            try {
+                // Compile thoughts
+                const thoughtsText = droppedThoughts.map(t => t.content).join('\n\n');
+                
+                const prompt = `You are helping to create an action plan for a creative project.
+
+PROJECT: ${projectName}
+VISION: ${vision || 'Not specified'}
+DEADLINE: ${deadline || 'No deadline'}
+
+SOURCE THOUGHTS/IDEAS:
+${thoughtsText}
+
+Based on these thoughts and the project vision, create a clear, actionable step-by-step plan. 
+Return ONLY a JSON array of 5-8 steps, each with "step" (number) and "action" (description).
+Example: [{"step": 1, "action": "Research competitors..."}, ...]`;
+
+                const response = await fetch(`${BACKEND_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: prompt,
+                        history: []
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Try to parse JSON from response
+                    let steps;
+                    try {
+                        const jsonMatch = data.response.match(/\[[\s\S]*\]/);
+                        if (jsonMatch) {
+                            steps = JSON.parse(jsonMatch[0]);
+                        } else {
+                            // Fallback: create steps from response
+                            steps = data.response.split('\n')
+                                .filter(line => line.trim())
+                                .slice(0, 8)
+                                .map((line, i) => ({ step: i + 1, action: line.replace(/^\d+\.\s*/, '') }));
+                        }
+                    } catch (e) {
+                        steps = [{ step: 1, action: data.response }];
+                    }
+                    
+                    displaySteps(steps);
+                }
+                
+            } catch (error) {
+                console.error('>> Generation failed:', error);
+                alert('Failed to generate plan. Please try again.');
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '🔮 GENERATE ACTION PLAN';
+        }
+        
+        function displaySteps(steps) {
+            const container = document.getElementById('stepsList');
+            const panel = document.getElementById('actionSteps');
+            
+            container.innerHTML = steps.map(s => `
+                <div class="step-item">
+                    <span class="step-number">${s.step}</span>
+                    <span class="step-text">${s.action}</span>
+                    <input type="checkbox" class="step-checkbox">
+                </div>
+            `).join('');
+            
+            panel.classList.add('active');
+        }
+        
+        // ============================================
+        // START
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+    
+    <!-- Floating Kahotia -->
+    <script src="floating-kahotia.js"></script>
+</body>
+</html>
