@@ -295,7 +295,7 @@
             (gltf) => {
                 console.log('>> Floating Kahotia GLB loaded');
                 kahotia = gltf.scene;
-                kahotia.scale.set(3, 3, 3);
+                kahotia.scale.set(6, 6, 6);
                 kahotia.position.y = -1.8;  // Center in the portal
                 
                 // Enhance materials
