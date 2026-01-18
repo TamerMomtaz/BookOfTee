@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE BOOK OF TEE - The Kahotia Way</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --void-black: #030308;
+            --star-cyan: #00f0ff;
+            --cosmic-magenta: #ff00ff;
+            --thought-gold: #ffd700;
+            
+            /* Planet Colors */
+            --philosophtee: #9b59b6;
+            --lyrictee: #f1c40f;
+            --artistee: #e67e22;
+            --plantee: #27ae60;
+            --codetee: #00f0ff;
+            --dialoguena: #ff00ff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: var(--void-black);
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        #galaxy-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        
+        /* ============================================
+           HEADER
+           ============================================ */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(3, 3, 8, 0.95) 0%, transparent 100%);
+            z-index: 100;
+        }
+        
+        .title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--star-cyan), var(--cosmic-magenta), var(--thought-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 4px;
+        }
+        
+        .subtitle {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .nav-link {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            color: var(--star-cyan);
+            text-decoration: none;
+            padding: 8px 15px;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 3px;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+        }
+        
+        .nav-link:hover {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: var(--star-cyan);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+        }
+        
+        /* ============================================
+           PLANET INFO PANEL
+           ============================================ */
+        .planet-panel {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 20, 0.9);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 15px;
+            padding: 20px 40px;
+            z-index: 100;
+            text-align: center;
+            min-width: 400px;
+            opacity: 0;
+            transition: all 0.5s ease;
+            pointer-events: none;
+        }
+        
+        .planet-panel.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .planet-name {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+        
+        .planet-description {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 15px;
+        }
+        
+        .planet-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 15px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .stat-label {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .enter-planet-btn {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.8rem;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, var(--star-cyan), var(--cosmic-magenta));
+            border: none;
+            border-radius: 25px;
+            color: var(--void-black);
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .enter-planet-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.5);
+        }
+        
+        /* ============================================
+           LEGEND
+           ============================================ */
+        .legend {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(10, 10, 20, 0.8);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            z-index: 100;
+        }
+        
+        .legend-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .legend-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .legend-planet {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            box-shadow: 0 0 15px currentColor;
+        }
+        
+        .legend-planet.philosophtee { background: var(--philosophtee); color: var(--philosophtee); }
+        .legend-planet.lyrictee { background: var(--lyrictee); color: var(--lyrictee); }
+        .legend-planet.artistee { background: var(--artistee); color: var(--artistee); }
+        .legend-planet.plantee { background: var(--plantee); color: var(--plantee); }
+        .legend-planet.codetee { background: var(--codetee); color: var(--codetee); }
+        .legend-planet.dialoguena { background: var(--dialoguena); color: var(--dialoguena); }
+        
+        .legend-text {
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+        
+        .legend-count {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin-left: auto;
+        }
+        
+        /* ============================================
+           CYCLONE (Center Drop Zone)
+           ============================================ */
+        .cyclone-hint {
+            position: fixed;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(10, 10, 20, 0.8);
+            border: 1px solid rgba(255, 0, 255, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            z-index: 100;
+            text-align: center;
+            max-width: 200px;
+        }
+        
+        .cyclone-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            color: var(--cosmic-magenta);
+            margin-bottom: 10px;
+        }
+        
+        .cyclone-desc {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.5;
+        }
+        
+        /* ============================================
+           LOADING
+           ============================================ */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--void-black);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 1s ease;
+        }
+        
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            background: linear-gradient(90deg, var(--star-cyan), var(--cosmic-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .loading-status {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 2px;
+        }
+        
+        /* ============================================
+           INSTRUCTIONS
+           ============================================ */
+        .instructions {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 2px;
+            text-align: center;
+            z-index: 50;
+        }
+        
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 768px) {
+            .legend, .cyclone-hint {
+                display: none;
+            }
+            
+            .planet-panel {
+                min-width: 90%;
+                padding: 15px 20px;
+            }
+            
+            .title {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- LOADING -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-title">ENTERING THE KAHOTIA WAY</div>
+        <div class="loading-status" id="loadingStatus">Forming planets...</div>
+    </div>
+    
+    <!-- CANVAS -->
+    <canvas id="galaxy-canvas"></canvas>
+    
+    <!-- HEADER -->
+    <header class="header">
+        <div>
+            <div class="title">THE KAHOTIA WAY</div>
+            <div class="subtitle">The Galaxy of Tee's Mind</div>
+        </div>
+        <nav class="nav-links">
+            <a href="kahotia_alive.html" class="nav-link">CHAT</a>
+            <a href="kahotia_cosmos.html" class="nav-link">COSMOS</a>
+            <a href="konscious_ionganicised.html" class="nav-link">KONSCIOUS</a>
+            <a href="the_library.html" class="nav-link">LIBRARY</a>
+        </nav>
+    </header>
+    
+    <!-- LEGEND -->
+    <div class="legend">
+        <div class="legend-title">THE PLANETS</div>
+        <div class="legend-item" data-planet="philosophtee">
+            <div class="legend-planet philosophtee"></div>
+            <span class="legend-text">PhilosophTee</span>
+            <span class="legend-count" id="count-philosophtee">0</span>
+        </div>
+        <div class="legend-item" data-planet="lyrictee">
+            <div class="legend-planet lyrictee"></div>
+            <span class="legend-text">LyricTee</span>
+            <span class="legend-count" id="count-lyrictee">0</span>
+        </div>
+        <div class="legend-item" data-planet="artistee">
+            <div class="legend-planet artistee"></div>
+            <span class="legend-text">ArtisTee</span>
+            <span class="legend-count" id="count-artistee">0</span>
+        </div>
+        <div class="legend-item" data-planet="plantee">
+            <div class="legend-planet plantee"></div>
+            <span class="legend-text">PlanTee</span>
+            <span class="legend-count" id="count-plantee">0</span>
+        </div>
+        <div class="legend-item" data-planet="codetee">
+            <div class="legend-planet codetee"></div>
+            <span class="legend-text">CodeTee</span>
+            <span class="legend-count" id="count-codetee">0</span>
+        </div>
+        <div class="legend-item" data-planet="dialoguena">
+            <div class="legend-planet dialoguena"></div>
+            <span class="legend-text">DialogueNa</span>
+            <span class="legend-count" id="count-dialoguena">0</span>
+        </div>
+    </div>
+    
+    <!-- CYCLONE HINT -->
+    <div class="cyclone-hint">
+        <div class="cyclone-title">THE CYCLONE</div>
+        <div class="cyclone-desc">Drag thoughts to the center vortex to manifest them into action plans</div>
+    </div>
+    
+    <!-- PLANET INFO PANEL -->
+    <div class="planet-panel" id="planetPanel">
+        <div class="planet-name" id="planetName">PHILOSOPHTEE</div>
+        <div class="planet-description" id="planetDescription">The realm of existential exploration</div>
+        <div class="planet-stats">
+            <div class="stat">
+                <div class="stat-value" id="planetThoughts">0</div>
+                <div class="stat-label">Thoughts</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="planetConnections">0</div>
+                <div class="stat-label">Connections</div>
+            </div>
+        </div>
+        <button class="enter-planet-btn" id="enterPlanetBtn">ENTER ORBIT</button>
+    </div>
+    
+    <!-- INSTRUCTIONS -->
+    <div class="instructions">
+        CLICK A PLANET TO EXPLORE • SCROLL TO ZOOM • DRAG TO ROTATE
+    </div>
+    
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        
+        const BACKEND_URL = 'https://web-production-f5f1e.up.railway.app';
+        const KAHOTIA_GLB_PATH = './models/kahotia_hip_hop.glb';
+        
+        // Planet definitions
+        const PLANETS = {
+            philosophtee: {
+                name: 'PhilosophTee',
+                description: 'The realm of existential exploration - NO BOOK, مش كتاب, consciousness waves',
+                color: 0x9b59b6,
+                nodeTypes: ['Philosophy'],
+                orbitRadius: 200,
+                size: 25,
+                speed: 0.0003
+            },
+            lyrictee: {
+                name: 'LyricTee',
+                description: 'Where melodies become meaning - songs, poems, THE UNSHARED',
+                color: 0xf1c40f,
+                nodeTypes: ['Lyrics'],
+                orbitRadius: 280,
+                size: 22,
+                speed: 0.00025
+            },
+            artistee: {
+                name: 'ArtisTee',
+                description: 'Visual frequencies crystallized - paintings, designs, visual thought',
+                color: 0xe67e22,
+                nodeTypes: ['Art'],
+                orbitRadius: 350,
+                size: 20,
+                speed: 0.0002
+            },
+            plantee: {
+                name: 'PlanTee',
+                description: 'Industrial wisdom rooted deep - Al-Manar insights, manufacturing philosophy',
+                color: 0x27ae60,
+                nodeTypes: ['Plant', 'Bio'],
+                orbitRadius: 420,
+                size: 18,
+                speed: 0.00015
+            },
+            codetee: {
+                name: 'CodeTee',
+                description: 'Digital architecture blueprints - RootRise, systems, solutions',
+                color: 0x00f0ff,
+                nodeTypes: ['Code', 'Engineering'],
+                orbitRadius: 500,
+                size: 20,
+                speed: 0.0001
+            },
+            dialoguena: {
+                name: 'DialogueNa',
+                description: 'Raw cosmic conversations - the unfiltered exchange with Kahotia',
+                color: 0xff00ff,
+                nodeTypes: ['Thought', 'toll'],
+                orbitRadius: 580,
+                size: 22,
+                speed: 0.00008
+            }
+        };
+        
+        // ============================================
+        // THREE.JS GLOBALS
+        // ============================================
+        
+        let scene, camera, renderer;
+        let kahotia, kahotiaGroup, mixer;
+        let planets = {};
+        let planetMeshes = [];
+        let thoughtsByPlanet = {};
+        let clock = new THREE.Clock();
+        let selectedPlanet = null;
+        let supabaseClient;
+        
+        // Camera controls
+        let cameraRadius = 800;
+        let cameraTheta = 0;
+        let cameraPhi = Math.PI / 3;
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        
+        async function init() {
+            updateLoadingStatus('Creating cosmic void...');
+            
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x030308);
+            scene.fog = new THREE.FogExp2(0x030308, 0.0008);
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
+            updateCameraPosition();
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({
+                canvas: document.getElementById('galaxy-canvas'),
+                antialias: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            
+            updateLoadingStatus('Generating starfield...');
+            createStarfield();
+            
+            updateLoadingStatus('Summoning Kahotia...');
+            await loadKahotia();
+            
+            updateLoadingStatus('Loading thoughts from the void...');
+            await loadThoughts();
+            
+            updateLoadingStatus('Forming planets...');
+            createPlanets();
+            createOrbits();
+            
+            updateLoadingStatus('Igniting the sun...');
+            createCentralSun();
+            addLighting();
+            
+            updateLoadingStatus('The Kahotia Way awaits...');
+            
+            // Hide loading
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }, 800);
+            
+            // Events
+            setupControls();
+            window.addEventListener('resize', onWindowResize);
+            
+            // Start
+            animate();
+        }
+        
+        function updateLoadingStatus(text) {
+            document.getElementById('loadingStatus').textContent = text;
+        }
+        
+        // ============================================
+        // STARFIELD
+        // ============================================
+        
+        function createStarfield() {
+            const starCount = 5000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(starCount * 3);
+            const colors = new Float32Array(starCount * 3);
+            
+            for (let i = 0; i < starCount * 3; i += 3) {
+                const radius = 1500 + Math.random() * 2000;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                
+                positions[i] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i + 2] = radius * Math.cos(phi);
+                
+                // Star colors
+                const colorChoice = Math.random();
+                if (colorChoice < 0.7) {
+                    colors[i] = 0.9; colors[i + 1] = 0.9; colors[i + 2] = 1;
+                } else if (colorChoice < 0.85) {
+                    colors[i] = 0; colors[i + 1] = 0.9; colors[i + 2] = 1;
+                } else {
+                    colors[i] = 1; colors[i + 1] = 0; colors[i + 2] = 1;
+                }
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const material = new THREE.PointsMaterial({
+                size: 2,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            scene.add(new THREE.Points(geometry, material));
+        }
+        
+        // ============================================
+        // KAHOTIA (Center of the Galaxy)
+        // ============================================
+        
+        async function loadKahotia() {
+            return new Promise((resolve) => {
+                const loader = new THREE.GLTFLoader();
+                const dracoLoader = new THREE.DRACOLoader();
+                dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
+                loader.setDRACOLoader(dracoLoader);
+                
+                loader.load(
+                    KAHOTIA_GLB_PATH,
+                    (gltf) => {
+                        kahotia = gltf.scene;
+                        kahotia.scale.set(80, 80, 80);
+                        kahotia.position.set(0, 0, 0);
+                        
+                        // Emissive glow
+                        kahotia.traverse((child) => {
+                            if (child.isMesh && child.material) {
+                                child.material.emissive = new THREE.Color(0xff00ff);
+                                child.material.emissiveIntensity = 0.3;
+                            }
+                        });
+                        
+                        // Animations
+                        if (gltf.animations && gltf.animations.length > 0) {
+                            mixer = new THREE.AnimationMixer(kahotia);
+                            gltf.animations.forEach((clip) => {
+                                const action = mixer.clipAction(clip);
+                                action.setLoop(THREE.LoopRepeat);
+                                action.play();
+                            });
+                        }
+                        
+                        // Aura
+                        const auraGeo = new THREE.SphereGeometry(50, 32, 32);
+                        const auraMat = new THREE.MeshBasicMaterial({
+                            color: 0xff00ff,
+                            transparent: true,
+                            opacity: 0.1,
+                            side: THREE.BackSide
+                        });
+                        const aura = new THREE.Mesh(auraGeo, auraMat);
+                        
+                        kahotiaGroup = new THREE.Group();
+                        kahotiaGroup.add(kahotia);
+                        kahotiaGroup.add(aura);
+                        kahotiaGroup.userData.aura = aura;
+                        
+                        scene.add(kahotiaGroup);
+                        resolve();
+                    },
+                    undefined,
+                    (error) => {
+                        console.warn('Kahotia GLB failed, using placeholder');
+                        createPlaceholderKahotia();
+                        resolve();
+                    }
+                );
+            });
+        }
+        
+        function createPlaceholderKahotia() {
+            kahotiaGroup = new THREE.Group();
+            
+            const geo = new THREE.SphereGeometry(30, 32, 32);
+            const mat = new THREE.MeshPhongMaterial({
+                color: 0xff00ff,
+                emissive: 0x440044,
+                transparent: true,
+                opacity: 0.8
+            });
+            const sphere = new THREE.Mesh(geo, mat);
+            kahotiaGroup.add(sphere);
+            
+            scene.add(kahotiaGroup);
+        }
+        
+        // ============================================
+        // CENTRAL SUN
+        // ============================================
+        
+        function createCentralSun() {
+            // Inner glow
+            const sunGeo = new THREE.SphereGeometry(40, 32, 32);
+            const sunMat = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.3
+            });
+            const sun = new THREE.Mesh(sunGeo, sunMat);
+            scene.add(sun);
+            
+            // Outer glow layers
+            for (let i = 1; i <= 3; i++) {
+                const glowGeo = new THREE.SphereGeometry(40 + i * 15, 32, 32);
+                const glowMat = new THREE.MeshBasicMaterial({
+                    color: 0xff00ff,
+                    transparent: true,
+                    opacity: 0.05 / i,
+                    side: THREE.BackSide
+                });
+                scene.add(new THREE.Mesh(glowGeo, glowMat));
+            }
+        }
+        
+        // ============================================
+        // LOAD THOUGHTS
+        // ============================================
+        
+        async function loadThoughts() {
+            try {
+                const configResponse = await fetch(`${BACKEND_URL}/config`);
+                const config = await configResponse.json();
+                
+                supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_key);
+                
+                const { data: nodes, error } = await supabaseClient
+                    .from('nodes')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                // Categorize thoughts by planet
+                Object.keys(PLANETS).forEach(key => {
+                    thoughtsByPlanet[key] = [];
+                });
+                
+                (nodes || []).forEach(node => {
+                    const nodeType = node.node_type || node.type || 'thought';
+                    
+                    for (const [planetKey, planet] of Object.entries(PLANETS)) {
+                        if (planet.nodeTypes.some(t => t.toLowerCase() === nodeType.toLowerCase())) {
+                            thoughtsByPlanet[planetKey].push(node);
+                            break;
+                        }
+                    }
+                });
+                
+                // Update counts in UI
+                Object.keys(thoughtsByPlanet).forEach(key => {
+                    const countEl = document.getElementById(`count-${key}`);
+                    if (countEl) countEl.textContent = thoughtsByPlanet[key].length;
+                });
+                
+                console.log('>> Thoughts categorized by planet:', 
+                    Object.fromEntries(Object.entries(thoughtsByPlanet).map(([k, v]) => [k, v.length]))
+                );
+                
+            } catch (error) {
+                console.error('Failed to load thoughts:', error);
+            }
+        }
+        
+        // ============================================
+        // CREATE PLANETS
+        // ============================================
+        
+        function createPlanets() {
+            Object.entries(PLANETS).forEach(([key, config]) => {
+                const group = new THREE.Group();
+                
+                // Planet sphere
+                const planetGeo = new THREE.SphereGeometry(config.size, 32, 32);
+                const planetMat = new THREE.MeshPhongMaterial({
+                    color: config.color,
+                    emissive: config.color,
+                    emissiveIntensity: 0.3,
+                    shininess: 30
+                });
+                const planet = new THREE.Mesh(planetGeo, planetMat);
+                group.add(planet);
+                
+                // Glow
+                const glowGeo = new THREE.SphereGeometry(config.size * 1.3, 32, 32);
+                const glowMat = new THREE.MeshBasicMaterial({
+                    color: config.color,
+                    transparent: true,
+                    opacity: 0.15,
+                    side: THREE.BackSide
+                });
+                group.add(new THREE.Mesh(glowGeo, glowMat));
+                
+                // Ring (for some planets)
+                if (key === 'philosophtee' || key === 'dialoguena') {
+                    const ringGeo = new THREE.RingGeometry(config.size * 1.5, config.size * 2, 64);
+                    const ringMat = new THREE.MeshBasicMaterial({
+                        color: config.color,
+                        transparent: true,
+                        opacity: 0.3,
+                        side: THREE.DoubleSide
+                    });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.rotation.x = Math.PI / 2;
+                    group.add(ring);
+                }
+                
+                // Position on orbit
+                const angle = Math.random() * Math.PI * 2;
+                group.position.x = Math.cos(angle) * config.orbitRadius;
+                group.position.z = Math.sin(angle) * config.orbitRadius;
+                group.position.y = (Math.random() - 0.5) * 50;
+                
+                // Store data
+                group.userData = {
+                    key: key,
+                    config: config,
+                    angle: angle,
+                    thoughts: thoughtsByPlanet[key] || []
+                };
+                
+                planets[key] = group;
+                planetMeshes.push(planet);
+                scene.add(group);
+                
+                // Create orbiting thought particles
+                createThoughtParticles(group, thoughtsByPlanet[key] || [], config.color);
+            });
+        }
+        
+        function createThoughtParticles(planetGroup, thoughts, color) {
+            const count = Math.min(thoughts.length, 50);
+            if (count === 0) return;
+            
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(count * 3);
+            
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2;
+                const radius = 30 + Math.random() * 20;
+                positions[i * 3] = Math.cos(angle) * radius;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
+                positions[i * 3 + 2] = Math.sin(angle) * radius;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const material = new THREE.PointsMaterial({
+                color: color,
+                size: 4,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const particles = new THREE.Points(geometry, material);
+            planetGroup.add(particles);
+            planetGroup.userData.particles = particles;
+        }
+        
+        // ============================================
+        // ORBIT LINES
+        // ============================================
+        
+        function createOrbits() {
+            Object.values(PLANETS).forEach(config => {
+                const points = [];
+                for (let i = 0; i <= 64; i++) {
+                    const angle = (i / 64) * Math.PI * 2;
+                    points.push(new THREE.Vector3(
+                        Math.cos(angle) * config.orbitRadius,
+                        0,
+                        Math.sin(angle) * config.orbitRadius
+                    ));
+                }
+                
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineBasicMaterial({
+                    color: config.color,
+                    transparent: true,
+                    opacity: 0.15
+                });
+                
+                scene.add(new THREE.Line(geometry, material));
+            });
+        }
+        
+        // ============================================
+        // LIGHTING
+        // ============================================
+        
+        function addLighting() {
+            scene.add(new THREE.AmbientLight(0x222244, 0.5));
+            
+            const centerLight = new THREE.PointLight(0xff00ff, 2, 800);
+            centerLight.position.set(0, 0, 0);
+            scene.add(centerLight);
+            
+            const light1 = new THREE.PointLight(0x00f0ff, 1, 1000);
+            light1.position.set(300, 200, 300);
+            scene.add(light1);
+            
+            const light2 = new THREE.PointLight(0xffd700, 0.5, 800);
+            light2.position.set(-300, -100, -300);
+            scene.add(light2);
+        }
+        
+        // ============================================
+        // CONTROLS
+        // ============================================
+        
+        function setupControls() {
+            const canvas = renderer.domElement;
+            
+            canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+                
+                cameraTheta -= deltaX * 0.005;
+                cameraPhi = Math.max(0.2, Math.min(Math.PI - 0.2, cameraPhi + deltaY * 0.005));
+                
+                updateCameraPosition();
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            
+            canvas.addEventListener('mouseup', () => isDragging = false);
+            canvas.addEventListener('mouseleave', () => isDragging = false);
+            
+            canvas.addEventListener('wheel', (e) => {
+                cameraRadius = Math.max(300, Math.min(1500, cameraRadius + e.deltaY * 0.5));
+                updateCameraPosition();
+            });
+            
+            // Click on planets
+            canvas.addEventListener('click', onPlanetClick);
+            
+            // Legend clicks
+            document.querySelectorAll('.legend-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const planetKey = item.dataset.planet;
+                    focusOnPlanet(planetKey);
+                });
+            });
+            
+            // Enter planet button
+            document.getElementById('enterPlanetBtn').addEventListener('click', () => {
+                if (selectedPlanet) {
+                    // Navigate to cosmos with filter
+                    window.location.href = `kahotia_cosmos.html?filter=${selectedPlanet}`;
+                }
+            });
+        }
+        
+        function updateCameraPosition() {
+            camera.position.x = cameraRadius * Math.sin(cameraPhi) * Math.cos(cameraTheta);
+            camera.position.y = cameraRadius * Math.cos(cameraPhi);
+            camera.position.z = cameraRadius * Math.sin(cameraPhi) * Math.sin(cameraTheta);
+            camera.lookAt(0, 0, 0);
+        }
+        
+        function onPlanetClick(event) {
+            const mouse = new THREE.Vector2();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            
+            const intersects = raycaster.intersectObjects(planetMeshes);
+            
+            if (intersects.length > 0) {
+                const clickedPlanet = intersects[0].object.parent;
+                const planetKey = clickedPlanet.userData.key;
+                focusOnPlanet(planetKey);
+            } else {
+                // Click on empty space - hide panel
+                document.getElementById('planetPanel').classList.remove('active');
+                selectedPlanet = null;
+            }
+        }
+        
+        function focusOnPlanet(planetKey) {
+            const planet = planets[planetKey];
+            if (!planet) return;
+            
+            selectedPlanet = planetKey;
+            const config = planet.userData.config;
+            const thoughts = planet.userData.thoughts;
+            
+            // Update panel
+            const panel = document.getElementById('planetPanel');
+            document.getElementById('planetName').textContent = config.name.toUpperCase();
+            document.getElementById('planetName').style.color = `#${config.color.toString(16).padStart(6, '0')}`;
+            document.getElementById('planetDescription').textContent = config.description;
+            document.getElementById('planetThoughts').textContent = thoughts.length;
+            document.getElementById('planetConnections').textContent = Math.floor(thoughts.length * 1.5);
+            
+            panel.classList.add('active');
+            
+            // Animate camera toward planet
+            // (Simple version - could be smoother with GSAP)
+        }
+        
+        // ============================================
+        // ANIMATION
+        // ============================================
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+            
+            // Update Kahotia animations
+            if (mixer) mixer.update(delta);
+            
+            // Rotate Kahotia slowly
+            if (kahotiaGroup) {
+                kahotiaGroup.rotation.y += 0.002;
+                if (kahotiaGroup.userData.aura) {
+                    kahotiaGroup.userData.aura.scale.setScalar(1 + Math.sin(time * 2) * 0.1);
+                }
+            }
+            
+            // Orbit planets
+            Object.values(planets).forEach(planet => {
+                const config = planet.userData.config;
+                planet.userData.angle += config.speed;
+                
+                planet.position.x = Math.cos(planet.userData.angle) * config.orbitRadius;
+                planet.position.z = Math.sin(planet.userData.angle) * config.orbitRadius;
+                
+                // Rotate planet
+                planet.children[0].rotation.y += 0.01;
+                
+                // Rotate particles
+                if (planet.userData.particles) {
+                    planet.userData.particles.rotation.y += 0.005;
+                }
+            });
+            
+            renderer.render(scene, camera);
+        }
+        
+        // ============================================
+        // RESIZE
+        // ============================================
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // ============================================
+        // START
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+    
+    <!-- Floating Kahotia -->
+    <script src="floating-kahotia.js"></script>
+</body>
+</html>
