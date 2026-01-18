@@ -290,10 +290,15 @@
                 });
                 
                 // Setup animations
+                // Setup animations
                 if (gltf.animations && gltf.animations.length > 0) {
                     mixer = new THREE.AnimationMixer(kahotia);
                     gltf.animations.forEach((clip) => {
-                        mixer.clipAction(clip).play();
+                        const action = mixer.clipAction(clip);
+                        action.setLoop(THREE.LoopRepeat);
+                        action.clampWhenFinished = false;
+                        action.play();
+                        console.log(`>> Floating Kahotia animation: ${clip.name}`);
                     });
                 }
                 
@@ -356,17 +361,86 @@
         animate();
     }
     
+    // Mouse tracking
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let containerX = window.innerWidth - CONFIG.size - CONFIG.offset;
+    let containerY = window.innerHeight - CONFIG.size - CONFIG.offset;
+    let roamTargetX = containerX;
+    let roamTargetY = containerY;
+    let isMouseNear = false;
+    let lastRoamChange = 0;
+    
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        
+        // Check if mouse is within 200px of Kahotia
+        const rect = container.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const dist = Math.sqrt(Math.pow(mouseX - centerX, 2) + Math.pow(mouseY - centerY, 2));
+        isMouseNear = dist < 200;
+    });
+    
     function animate() {
         requestAnimationFrame(animate);
         
         const delta = clock.getDelta();
         const time = clock.getElapsedTime();
         
-        if (mixer) mixer.update(delta);
+        if (mixer) mixer.update(delta || 0.016);
         
         if (kahotia) {
-            kahotia.rotation.y += 0.01;
+            // Gentle bob
             kahotia.position.y = Math.sin(time * 2) * 0.05;
+            
+            // Face toward mouse when near
+            if (isMouseNear) {
+                const rect = container.getBoundingClientRect();
+                const dx = mouseX - (rect.left + rect.width / 2);
+                const targetRotY = dx * 0.005;
+                kahotia.rotation.y += (targetRotY - kahotia.rotation.y) * 0.1;
+            } else {
+                kahotia.rotation.y += 0.01;
+            }
+        }
+        
+        // Screensaver roaming when mouse not near
+        if (!isMouseNear && !container.classList.contains('dragging')) {
+            // Change roam target every 3-5 seconds
+            if (time - lastRoamChange > 3 + Math.random() * 2) {
+                roamTargetX = 50 + Math.random() * (window.innerWidth - CONFIG.size - 100);
+                roamTargetY = 50 + Math.random() * (window.innerHeight - CONFIG.size - 100);
+                lastRoamChange = time;
+            }
+            
+            // Drift toward roam target
+            containerX += (roamTargetX - containerX) * 0.01;
+            containerY += (roamTargetY - containerY) * 0.01;
+            
+            container.style.left = containerX + 'px';
+            container.style.top = containerY + 'px';
+            container.style.right = 'auto';
+            container.style.bottom = 'auto';
+        }
+        
+        // Follow cursor when mouse is near (gentle attraction)
+        if (isMouseNear && !container.classList.contains('dragging')) {
+            const targetX = mouseX - CONFIG.size / 2;
+            const targetY = mouseY - CONFIG.size / 2;
+            
+            containerX += (targetX - containerX) * 0.03;
+            containerY += (targetY - containerY) * 0.03;
+            
+            // Keep in bounds
+            containerX = Math.max(10, Math.min(window.innerWidth - CONFIG.size - 10, containerX));
+            containerY = Math.max(10, Math.min(window.innerHeight - CONFIG.size - 10, containerY));
+            
+            container.style.left = containerX + 'px';
+            container.style.top = containerY + 'px';
+            container.style.right = 'auto';
+            container.style.bottom = 'auto';
         }
         
         renderer.render(scene, camera);
