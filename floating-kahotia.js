@@ -13,9 +13,8 @@
         size: 80,                    // Size of floating Kahotia
         position: 'bottom-right',    // bottom-right, bottom-left, top-right, top-left
         offset: 20,                  // Distance from edge
-        glbFiles: [
-            './models/kahotia_hip_hop.glb',
-            './models/jazz_dance.glb'
+       glbFiles: [
+            './models/kahotia_hip_hop.glb'
         ],
         glbPath: null,  // Will be set randomly
         enableDrag: true,
